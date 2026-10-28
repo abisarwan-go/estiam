@@ -1,352 +1,692 @@
 # Livre des concepts PyMart (lab par lab)
 
-**But :** demain, tu dois pouvoir *expliquer* le projet.  
-Ce fichier est ton **cours condensé**. Lis-le une fois. Chaque lab = **1 idée clé**.
+**But :** demain, tu dois pouvoir *expliquer* le projet **sans déjà connaître le jargon**.  
+Ce fichier est ton **cours autodocumenté**. Chaque lab = 1 idée. Chaque bout de code est **décortiqué**.
 
-> Astuce oralediag : pour chaque lab, retiens la phrase **« En une phrase »**.  
-> Si on te demande un détail, regarde **« Où c’est dans le code »**.
+### Comment lire
+1. Lis **« En une phrase »**
+2. Lis **« Décodage »** (le code est traduit en français)
+3. Garde la **« Phrase orale »** pour demain
+
+### Règle du livre
+Si tu vois du code, il y a toujours un bloc **Décodage ligne par ligne**.  
+Rien n’est “évident” : `lambda`, `yield`, `self`, `super()`, etc. sont expliqués.
 
 ---
 
-## Carte mentale (vue d’ensemble)
+## Carte mentale
 
 ```
 Lab 1–2   → organiser le code + environnement
-Lab 3–5   → nettoyer des données texte + gérer les erreurs
-Lab 6–9   → objets métier (classes, héritage, exceptions)
-Lab 10–12 → streamer, fichiers, dates
+Lab 3–5   → nettoyer du texte + gérer les erreurs
+Lab 6–9   → objets (classes), héritage, exceptions
+Lab 10–12 → flux (generators), fichiers, dates
 Finale    → tout brancher dans une CLI
 ```
 
-**Produit final à citer :**  
-`python -m pymart.cli` importe des fichiers, crée/liste des commandes, écrit des rapports datés.
+**Produit final :**  
+`python -m pymart.cli` = programme lancé dans le terminal qui importe des fichiers, gère des commandes, écrit des rapports.
+
+**Décodage de cette commande :**
+- `python` = lance l’interpréteur Python
+- `-m` = “exécute un **module** / package comme un programme”
+- `pymart.cli` = le fichier `pymart/cli.py` (ou le package cli) à l’intérieur du dossier `pymart`
 
 ---
 
 ## Lab 1 — Packages et imports
 
 ### En une phrase
-On découpe le code en **package** (`pymart/`) pour importer proprement au lieu d’un seul gros fichier.
+On range le code dans un **package** `pymart/` pour pouvoir écrire `from pymart... import ...` au lieu de tout coller dans un seul fichier.
 
-### Concept
-- Un dossier avec `__init__.py` = **package** importable.
-- Sous-packages : `inventory/`, `billing/`.
-- Script d’entrée qui consomme le package : `from pymart... import ...`
+### Vocabulaire
+| Mot | Sens |
+|-----|------|
+| **Module** | un fichier `.py` |
+| **Package** | un **dossier** de modules, reconnu par Python grâce à `__init__.py` |
+| **Import** | “va chercher ce code ailleurs et donne-moi accès” |
+
+### Structure
+```text
+pymart/                 ← package principal
+  __init__.py           ← dit à Python : “ce dossier est un package”
+  inventory/            ← sous-package
+    __init__.py
+    stock.py            ← module avec des fonctions stock
+  billing/
+    __init__.py
+    invoice.py
+demos/lab01_main.py     ← script qui UTILISE le package
+```
+
+### Code typique
+```python
+from pymart.inventory.stock import add_stock, get_stock
+```
+
+### Décodage ligne par ligne
+- `from pymart.inventory.stock`
+  - entre dans le package `pymart`
+  - puis le sous-package `inventory`
+  - puis le module `stock.py`
+- `import add_stock, get_stock`
+  - récupère **deux fonctions** définies dans ce fichier
+- Après ça, tu peux appeler `add_stock(...)` dans ton script
 
 ### Pourquoi ça compte
-Sans packages, le projet final serait illisible. La CLI importe `pymart.services`, `pymart.models`, etc.
+Le projet final a beaucoup de fichiers. Sans packages, tu te perds et les imports cassent.
 
-### Où c’est dans le code
-- Package : `pymart/`
+### Où c’est
+- Code : `pymart/`
 - Démo : `python demos/lab01_main.py`
 
-### Phrase orale type
-> « On a un package `pymart` avec des sous-modules. Le script importe les fonctions au lieu de tout coller dans un seul fichier. »
+### Phrase orale
+> « On a un package `pymart` avec des sous-modules. Le script importe les fonctions au lieu de tout mettre dans un seul fichier. »
 
 ---
 
-## Lab 2 — Environnement virtuel + dépendances
+## Lab 2 — venv + requirements
 
 ### En une phrase
-Un **venv** isole les libs du projet ; `requirements.txt` fige les versions pour reproduire l’install.
+Un **environnement virtuel** isole les bibliothèques du projet ; `requirements.txt` liste les versions à réinstaller.
 
-### Concept
+### Vocabulaire
+| Mot | Sens |
+|-----|------|
+| **venv** | “mini Python privé” pour ce projet seulement |
+| **pip** | outil qui **installe** des bibliothèques |
+| **dépendance** | bibliothèque dont ton projet a besoin (`tabulate`, `requests`…) |
+| **requirements.txt** | liste figée : `nom==version` |
+
+### Commandes
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
-- `pip freeze > requirements.txt` capture l’état.
-- Sans venv : conflits entre projets / machines.
+
+### Décodage
+- `python -m venv .venv`  
+  crée un dossier `.venv` = environnement isolé
+- `source .venv/bin/activate`  
+  “à partir de maintenant, ce terminal utilise CE Python-là”
+- `pip install -r requirements.txt`  
+  `-r` = “lis le fichier et installe tout ce qui est dedans”
 
 ### Pourquoi ça compte
-Tout le monde (toi, correcteur, CI) installe les mêmes versions (`tabulate`, `requests`…).
+Sans venv : “ça marche sur mon PC” / “pas sur le tien”.
 
-### Où c’est dans le code
+### Où c’est
 - `requirements.txt`
-- `.venv/` (local, pas commit)
+- `.venv/` (local, pas dans git)
 
-### Phrase orale type
-> « Le venv isole les dépendances. Le requirements.txt permet de réinstaller exactement ce qu’il faut. »
+### Phrase orale
+> « Le venv isole les libs. Le requirements.txt permet de réinstaller les mêmes versions. »
 
 ---
 
-## Lab 3 — Nettoyage de chaînes (string processing)
+## Lab 3 — Nettoyage de chaînes (strings)
 
 ### En une phrase
-On transforme des lignes **sales** (espaces, casse, téléphone) en champs **standards** avec `split` / `strip` / title / digits.
+On prend une ligne sale, on la découpe, on nettoie chaque morceau (espaces, casse, téléphone).
 
-### Concept
-Pipeline typique :
-1. `split("|")` → champs
-2. `strip()` + collapse espaces
-3. name → Title Case
-4. email → lower, validation simple (`@`, domaine avec `.`)
-5. phone → garder les chiffres → format `(555) 010-2000`
+### Exemple de donnée brute
+```text
+"grACE hopper| grace.hopper@NAVY.mil|555.010.2001"
+```
+
+### Pipeline (étapes)
+1. **Séparer** les champs
+2. **Enlever** les espaces inutiles
+3. **Normaliser** name / email / phone
+
+### Code typique
+```python
+parts = raw.split("|")
+name = parts[0].strip().title()
+email = "".join(parts[1].split()).lower()
+digits = "".join(ch for ch in parts[2] if ch.isdigit())
+phone = f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+```
+
+### Décodage
+- `raw.split("|")`  
+  coupe la string dès qu’il y a `|` → liste `["grACE hopper", " grace...", "555..."]`
+- `parts[0]`  
+  1er élément de la liste (index commence à **0**)
+- `.strip()`  
+  enlève espaces au début/à la fin
+- `.title()`  
+  `grace hopper` → `Grace Hopper`
+- `"".join(parts[1].split())`  
+  - `.split()` sans argument coupe sur tous les espaces  
+  - `"".join(...)` recolle **sans** espace → email sans trous
+- `.lower()`  
+  majuscules → minuscules
+- `ch.isdigit()`  
+  `True` si le caractère est un chiffre `0-9`
+- `"".join(ch for ch in ... if ...)`  
+  “fabrique une nouvelle string avec seulement les chiffres”  
+  (c’est une **compréhension** : boucle courte en une ligne)
+- `digits[:3]`  
+  “tranche” : les 3 premiers caractères (indices 0,1,2)
+- `f"(...)"`  
+  **f-string** : colle du texte + des variables dans une string
 
 ### Pourquoi ça compte
-Les exports POS sont sales. Sans nettoyage, impossible de comparer / stocker proprement.
+Les exports magasin sont sales. Sans normaliser, impossible de comparer deux emails / téléphones.
 
-### Où c’est dans le code
+### Où c’est
 - `pymart/customers/cleaning.py`
 - `python demos/lab03_customer_report.py`
 
-### Phrase orale type
-> « On normalise name, email et phone avec des méthodes string, puis on imprime un rapport aligné. »
+### Phrase orale
+> « On split, strip, title/lower, et on reconstruit le téléphone à partir des chiffres seulement. »
 
 ---
 
-## Lab 4 — Listes, types, tri
+## Lab 4 — Types, listes, tri
 
 ### En une phrase
-On convertit du texte en **types Python** (`int`, `float`), on stocke des **listes de listes**, on **trie** par prix.
+On transforme du texte en vrais nombres (`int`/`float`), on range chaque vente dans une liste, puis on **trie par prix**.
 
-### Concept
-- `split("|")` + strip labels (`qty:`, `price:`)
-- Enlever `$` et `,` avant `float`
-- `records.sort(key=lambda r: r[3])`
-- Affichage avec f-strings alignées
+### Forme d’une ligne nettoyée
+```python
+# index:  0        1         2     3
+row = ["SKU-001", "Widget",  2,  3.50]
+#        sku       name     qty  price
+```
+
+### Pourquoi `r[3]` ?
+Parce que le **prix** est le **4e** élément, donc index **3** (0,1,2,3).
+
+### Code qui fait peur (expliqué)
+```python
+records.sort(key=lambda r: r[3])
+```
+
+### Décodage COMPLET de cette ligne
+1. `records`  
+   une **liste** de lignes, chaque ligne est elle-même une liste `[sku, name, qty, price]`
+2. `.sort(...)`  
+   trie **la liste sur place** (modifie `records` directement)
+3. `key=...`  
+   “pour décider l’ordre, utilise CETTE valeur de chaque élément”
+4. `lambda r: r[3]`  
+   - `lambda` = **mini-fonction anonyme** (sans `def`, sans nom)  
+   - `r` = “une ligne” (un élément de `records`)  
+   - `r[3]` = le prix de cette ligne  
+   - donc : “trie selon le prix”
+
+### Version équivalente PLUS LISIBLE (même idée)
+```python
+def prix_de_la_ligne(r):
+    return r[3]   # le prix
+
+records.sort(key=prix_de_la_ligne)
+```
+`lambda` = juste la version courte de cette fonction.
+
+### Autre code utile du lab
+```python
+price = float(text.replace("$", "").replace(",", ""))
+```
+- `.replace("$", "")` enlève le symbole dollar
+- `.replace(",", "")` enlève les séparateurs de milliers (`1,299.00` → `1299.00`)
+- `float(...)` convertit la string en nombre à virgule
 
 ### Pourquoi ça compte
-Trier / totaliser demande des nombres, pas des strings `"$12.00"`.
+Tu ne peux pas trier correctement des prix s’ils restent des strings `"$12.00"`.
 
-### Où c’est dans le code
+### Où c’est
 - `pymart/sales/cleaning.py`
 - `python demos/lab04_sales_report.py`
 
-### Phrase orale type
-> « Après nettoyage, chaque ligne est `[sku, name, qty, price]` typée, puis on trie par prix pour le rapport. »
+### Phrase orale
+> « Chaque vente devient une liste typée. On trie avec sort(key=...) sur le prix (index 3). lambda est juste une petite fonction anonyme. »
 
 ---
 
 ## Lab 5 — try / except / else / finally
 
 ### En une phrase
-Une **mauvaise ligne** ne doit pas planter tout l’import : on catch, on log, on continue.
+Si une ligne est mauvaise, on **attrape l’erreur**, on la compte, et on **continue** les autres lignes.
 
-### Concept
+### Vocabulaire
+| Mot | Sens |
+|-----|------|
+| **Exception** | “erreur Python” qui interrompt le flux normal |
+| **raise** | “lève / déclenche” une erreur |
+| **try** | “essaie ce code risqué” |
+| **except** | “si cette erreur arrive, fais ça” |
+| **else** | “si try a réussi (pas d’erreur)” |
+| **finally** | “fais ça dans tous les cas (succès ou échec)” |
+
+### Code
 ```python
 try:
-    parse(...)
+    order = parse_order_line(line)
 except ValidationError:
-    rejected += 1   # attendu : mauvaise donnée
+    rejected += 1
 except Exception:
-    failed += 1     # inattendu
+    failed += 1
 else:
-    imported += 1   # succès seulement ici
+    imported += 1
+    orders.append(order)
 finally:
-    log_processed() # toujours
+    log("ligne traitée")
 ```
-- Distinguer **PARSE** (illisible) vs **VALIDATION** (lisible mais invalide).
-- Résumé : imported / rejected / failed.
+
+### Décodage du flux
+1. Entre dans `try` → tente de parser
+2. Si `ValidationError` (donnée invalide attendue) → `rejected += 1`
+3. Sinon si autre `Exception` (bug inattendu) → `failed += 1`
+4. Si **aucune** erreur → `else` s’exécute → on compte un import réussi
+5. Dans tous les cas → `finally` logue
+
+### PARSE vs VALIDATION (idée métier)
+- **PARSE** : “je n’arrive même pas à lire” (pas assez de colonnes, `two` au lieu de `2`)
+- **VALIDATION** : “j’ai lu, mais la règle métier refuse” (quantité ≤ 0, etc.)
 
 ### Pourquoi ça compte
-En prod, un fichier a toujours des lignes pourries. Fail-fast total = inutilisable.
+Un seul mauvais enregistrement ne doit pas tuer tout l’import.
 
-### Où c’est dans le code
+### Où c’est
 - `pymart/orders/importer.py`
 - `python demos/lab05_import_orders.py`
-- Même esprit dans `pymart.cli import`
+- Même logique dans `python -m pymart.cli import`
 
-### Phrase orale type
-> « try/except par ligne : on rejette la mauvaise donnée, on continue, et on affiche un résumé. »
+### Phrase orale
+> « try/except par ligne : on rejette la mauvaise donnée, on continue, puis on affiche imported/rejected. »
 
 ---
 
-## Lab 6 — Classes OOP de base
+## Lab 6 — Classes (OOP de base)
 
 ### En une phrase
-`Product` et `Customer` encapsulent l’état + des **méthodes métier** (`apply_discount`, `add_loyalty_points`).
+Une **classe** décrit un type d’objet (ex: Product). Une **instance** est un objet concret créé à partir de la classe.
 
-### Concept
-- `__init__` = création + premières validations
-- Méthodes = comportement (pas juste des données)
-- `__str__` = affichage lisible
+### Vocabulaire
+| Mot | Sens |
+|-----|------|
+| **Classe** | le “moule” |
+| **Instance** | un objet fabriqué avec le moule |
+| **Attribut** | donnée collée à l’objet (`self.price`) |
+| **Méthode** | fonction collée à l’objet (`apply_discount`) |
+| **`self`** | “cet objet-ci” (l’instance courante) |
+| **`__init__`** | constructeur : appelé à la création `Product(...)` |
+| **`__str__`** | texte affiché quand on fait `print(objet)` |
+
+### Code
+```python
+class Product:
+    def __init__(self, sku, name, price, quantity):
+        self.sku = sku
+        self.name = name
+        self.price = price
+        self.quantity = quantity
+
+    def apply_discount(self, percentage):
+        self.price = self.price * (1 - percentage / 100)
+        return self.price
+
+p = Product("NB-001", "Notebook", 3.49, 120)
+p.apply_discount(10)
+```
+
+### Décodage
+- `class Product:`  
+  définit le moule Product
+- `def __init__(self, ...):`  
+  s’exécute quand tu écris `Product(...)`
+- `self.price = price`  
+  range la valeur **dans l’objet**
+- `p = Product(...)`  
+  crée **une instance**
+- `p.apply_discount(10)`  
+  appelle la méthode sur **cette** instance `p`  
+  (Python passe `p` automatiquement dans `self`)
 
 ### Pourquoi ça compte
-Le métier n’est plus des dicts éparpillés : c’est des objets cohérents.
+Au lieu de dicts partout, on a des objets métier avec comportement.
 
-### Où c’est dans le code
-- `pymart/models/product.py`, `pymart/models/customer.py`
+### Où c’est
+- `pymart/models/product.py`, `customer.py`
 - `python demos/lab06_store_demo.py`
 
-### Phrase orale type
-> « Product et Customer sont des classes : validation à la création, méthodes pour changer le prix ou les points. »
+### Phrase orale
+> « Product/Customer sont des classes : __init__ initialise, les méthodes changent l’état, print utilise __str__. »
 
 ---
 
-## Lab 7 — Properties, classmethod, staticmethod, encapsulation
+## Lab 7 — property / classmethod / staticmethod / encapsulation
 
 ### En une phrase
-On contrôle les écritures avec des **`@property`**, on compte les instances avec un **classmethod**, on valide l’email avec un **staticmethod**, on cache l’interne avec `__`.
+On contrôle comment on lit/écrit les données (`property`), on a des outils de classe (`classmethod`), des utilitaires sans objet (`staticmethod`), et on cache l’interne (`__nom`).
 
-### Concept (à ne pas mélanger)
+### 1) `@property` + setter
+```python
+@property
+def price(self):
+    return self._price
 
-| Outil | Rôle |
-|-------|------|
-| `@property` / setter | `p.price = -1` → refus via validation |
-| `@classmethod` | agit sur la **classe** (`Product.total_products()`) |
-| `@staticmethod` | utilitaire sans `self` (`Customer.is_valid_email`) |
-| `__sku` / `__email` | name mangling → pas d’accès direct `obj.__sku` |
+@price.setter
+def price(self, value):
+    if value < 0:
+        raise ValueError("price must be >= 0")
+    self._price = value
+```
 
-### Pourquoi ça compte
-L’API publique reste simple (`product.price`) mais **protège** l’intégrité des données.
+### Décodage property
+- `@property`  
+  permet d’écrire `p.price` (comme un attribut) alors que c’est une méthode
+- `@price.setter`  
+  le code exécuté quand on fait `p.price = ...`
+- Intérêt : `p.price = -1` peut être **refusé**
 
-### Où c’est dans le code
+`_price` (un underscore) = convention “interne”.  
+`__price` / `__sku` (deux underscores) = **name mangling** : Python renomme en coulisse pour éviter l’accès direct accidentel.
+
+### 2) `@classmethod`
+```python
+@classmethod
+def total_products(cls):
+    return cls._total_products
+```
+- Reçoit `cls` (la **classe**), pas une instance
+- Sert pour un compteur partagé par tous les Product
+
+### 3) `@staticmethod`
+```python
+@staticmethod
+def is_valid_email(email):
+    return "@" in email and "." in email.split("@")[-1]
+```
+- Pas de `self`, pas de `cls`
+- Juste une fonction rangée dans la classe (organisation)
+
+### Tableau anti-confusion
+| Décorateur | Reçoit | Sert à |
+|------------|--------|--------|
+| méthode normale | `self` | agir sur **un** objet |
+| `@classmethod` | `cls` | agir sur / pour la **classe** |
+| `@staticmethod` | rien | utilitaire lié thématiquement |
+| `@property` | `self` | lecture contrôlée style attribut |
+
+### Où c’est
 - `pymart/models/product.py`, `customer.py`
 - `python demos/lab07_properties_demo.py`
 
-### Phrase orale type
-> « Le prix passe par un setter validé. total_products est un classmethod. is_valid_email est static. Les attributs `__` renforcent l’encapsulation. »
+### Phrase orale
+> « price est une property validée. total_products est classmethod. is_valid_email est staticmethod. __sku cache l’interne. »
 
 ---
 
 ## Lab 8 — Héritage + polymorphisme
 
 ### En une phrase
-`PerishableProduct` / `ElectronicProduct` **héritent** de `Product` et **surchargent** `describe()` ; une boucle unique appelle `describe()` sans `isinstance`.
+Une sous-classe **réutilise** la classe mère (`super()`) et peut **redéfinir** une méthode (`describe`) ; une boucle appelle la même méthode sur des objets différents.
 
-### Concept
+### Vocabulaire
+| Mot | Sens |
+|-----|------|
+| **Héritage** | `class Enfant(Parent)` : Enfant reçoit le comportement du Parent |
+| **`super()`** | “appelle la version du parent” |
+| **Override** | redéfinir une méthode du parent |
+| **Polymorphisme** | même appel (`p.describe()`), comportement selon le vrai type |
+
+### Code
 ```python
 class PerishableProduct(Product):
-    def __init__(...):
-        super().__init__(...)   # réutilise la base
-        self.expiry_date = ...
+    def __init__(self, sku, name, price, expiry_date, quantity=0):
+        super().__init__(sku, name, price, quantity)
+        self.expiry_date = expiry_date
 
     def describe(self):
-        return super().describe() + " | expires: ..."
+        return super().describe() + f" | expires: {self.expiry_date}"
+
+products = [Product(...), PerishableProduct(...), ElectronicProduct(...)]
+for p in products:
+    print(p.describe())   # pas de if type == ...
 ```
-- **Héritage** = réutiliser la base.
-- **Polymorphisme** = même appel, comportement selon le type réel.
+
+### Décodage
+- `class PerishableProduct(Product)`  
+  “PerishableProduct **est un** Product” (+ options en plus)
+- `super().__init__(...)`  
+  laisse Product initialiser sku/name/price/quantity
+- `def describe(self):` dans l’enfant  
+  remplace/étend la version parent
+- Boucle `for p in products: p.describe()`  
+  Python choisit la bonne version selon l’objet réel = **polymorphisme**
 
 ### Pourquoi ça compte
-Catalogue mixte (lait, casque, carte) sans `if kind == ...` partout.
+Catalogue mixte sans une forêt de `if`.
 
-### Où c’est dans le code
+### Où c’est
 - `pymart/models/perishable.py`, `electronic.py`
 - `python demos/lab08_catalog_demo.py`
-- Rapports finaux utilisent `product.describe()`
 
-### Phrase orale type
-> « Les sous-classes appellent super() puis ajoutent leurs champs. print_catalog appelle describe() : polymorphisme. »
+### Phrase orale
+> « Les sous-classes appellent super(), surchargent describe(), et une seule boucle affiche chaque type correctement. »
 
 ---
 
-## Lab 9 — Exceptions métier custom
+## Lab 9 — Exceptions custom
 
 ### En une phrase
-On crée une hiérarchie `PyMartError` → erreurs riches (`InsufficientStockError`, …) avec **contexte** (sku, qty…).
+On crée nos propres types d’erreurs (`PyMartError`, `InsufficientStockError`) avec un message clair + des attributs utiles.
 
-### Concept
+### Code
 ```python
+class PyMartError(Exception):
+    """Base de toutes les erreurs métier PyMart."""
+
 class InsufficientStockError(PyMartError):
     def __init__(self, sku, requested_qty, available_stock):
         self.sku = sku
-        ...
-        super().__init__(f"Insufficient stock for SKU '{sku}': ...")
+        self.requested_qty = requested_qty
+        self.available_stock = available_stock
+        super().__init__(
+            f"Insufficient stock for SKU '{sku}': "
+            f"requested {requested_qty}, available {available_stock}."
+        )
 ```
-- Catch **spécifique** d’abord, puis `PyMartError`.
-- Message + attributs = diagnostic / UX.
 
-### Pourquoi ça compte
-`ValueError` générique ne dit pas *quoi* faire. Une erreur métier guide la correction.
+### Décodage
+- `class ... (Exception)` / `(PyMartError)`  
+  “cette classe **est une** exception”
+- On stocke `self.sku`, etc. pour que le `except` puisse lire le contexte
+- `super().__init__("message")`  
+  définit le texte vu dans `print(erreur)` / `str(erreur)`
 
-### Où c’est dans le code
+### Catch spécifique → général
+```python
+try:
+    product.sell(10)
+except InsufficientStockError as e:
+    print(e.sku, e.requested_qty, e.available_stock)
+except PyMartError as e:
+    print("autre erreur métier:", e)
+```
+- `as e` = “range l’objet erreur dans la variable `e`”
+- On attrape d’abord le cas précis, puis le filet plus large
+
+### Où c’est
 - `pymart/exceptions.py`
-- `Product.sell()` / `apply_discount()`
 - `python demos/lab09_run_demo.py`
 
-### Phrase orale type
-> « On a une base PyMartError et des sous-classes avec contexte. sell() lève InsufficientStockError au lieu de planter obscurément. »
+### Phrase orale
+> « Hiérarchie PyMartError. InsufficientStockError porte sku/quantités. On catch du plus précis au plus général. »
 
 ---
 
-## Lab 10 — Generators (streaming)
+## Lab 10 — Generators (`yield`) et streaming
 
 ### En une phrase
-Un **generator** (`yield`) traite **1 enregistrement à la fois** : mémoire stable même sur gros fichiers.
+Un generator **rend les résultats un par un** (`yield`) au lieu de construire une énorme liste en mémoire.
 
-### Concept
+### Vocabulaire
+| Mot | Sens |
+|-----|------|
+| **`yield`** | “renvoie une valeur… et met la fonction en pause jusqu’au prochain tour” |
+| **Generator** | fonction qui utilise `yield` |
+| **Lazy** | calcule seulement quand on demande |
+| **Eager** | calcule/charge tout d’un coup (`list(...)`) |
+| **Closure** | fonction interne qui “se souvient” d’une variable extérieure |
+
+### Code generator
 ```python
 def read_sales_records(lines):
     for line in lines:
-        yield clean(line)   # pas de liste géante
+        yield clean(line)
+```
 
+### Décodage
+- Boucle sur chaque `line`
+- `yield clean(line)` envoie **un** enregistrement nettoyé
+- La fonction ne crée pas `big_list.append(...)` de tout le fichier
+
+### Filtre en generator expression
+```python
 high = (r for r in read_sales_records(data) if r["total"] >= 200)
 ```
-- **Lazy** : calcul à la demande.
-- **Closure** `make_threshold_filter(min)` = fabrique de filtres.
-- `list(stream)` = eager (charge tout) ; à éviter sur gros volumes.
+- `( ... )` avec `for` = generator (paresseux)
+- `[ ... ]` serait une list comprehension (charge tout)
 
-### Pourquoi ça compte
-Les exports POS peuvent être énormes. Stream = scalable.
+### Closure (filtre configurable)
+```python
+def make_threshold_filter(min_total):
+    def keep(record):
+        return record["total"] >= min_total
+    return keep
 
-### Où c’est dans le code
+keep_high = make_threshold_filter(200)
+keep_high(une_vente)  # True/False
+```
+
+### Décodage closure
+- `make_threshold_filter(200)` crée et **retourne** la fonction `keep`
+- `keep` “se rappelle” que `min_total` vaut `200`
+- Ça évite les variables globales
+
+### Où c’est
 - `pymart/streaming/sales.py`
 - `pymart/io/parsers.py` (`iter_text_rows`)
 - `python demos/lab10_stream_sales.py`
 
-### Phrase orale type
-> « yield renvoie un flux. On filtre avec une generator expression. On ne matérialise pas toute la liste en RAM. »
+### Phrase orale
+> « yield stream les lignes une par une. Les generator expressions filtrent sans tout charger. Une closure fabrique un filtre avec seuil mémorisé. »
 
 ---
 
-## Lab 11 — Fichiers & dossiers (os / pathlib / shutil)
+## Lab 11 — Fichiers et dossiers
 
 ### En une phrase
-On crée une arborescence de rapports, on **parcourt** avec `os.walk` / `rglob`, on **move/copy** selon des règles, on nettoie les dossiers vides.
+On crée des dossiers, on écrit des fichiers, on les déplace/copie selon des règles, on parcourt l’arborescence.
 
-### Concept
-- `Path.mkdir(exist_ok=True)` → setup idempotent
-- Règles : ex. `inventory_*` → move archive ; `sales_*` → copy archive
-- `shutil.move` / `shutil.copy2`
-- Dry-run avant d’écrire pour de vrai
+### Vocabulaire
+| Mot | Sens |
+|-----|------|
+| **`pathlib.Path`** | objet “chemin de fichier/dossier” |
+| **`mkdir`** | créer un dossier |
+| **`exist_ok=True`** | “si ça existe déjà, ne plante pas” |
+| **`shutil.move`** | déplacer (l’original part) |
+| **`shutil.copy2`** | copier (l’original reste) |
+| **idempotent** | re-exécuter ne casse pas / converge vers le même état |
+| **dry-run** | afficher ce qu’on *ferait*, sans le faire |
 
-### Pourquoi ça compte
-Sans organisation, les rapports s’empilent et deviennent introuvables.
+### Code
+```python
+from pathlib import Path
+import shutil
 
-### Où c’est dans le code
+folder = Path("reports") / "2024"
+folder.mkdir(parents=True, exist_ok=True)
+
+path = folder / "sales_2024-01.txt"
+path.write_text("contenu\n", encoding="utf-8")
+
+shutil.move(str(path), "reports/archive/sales/2024/sales_2024-01.txt")
+```
+
+### Décodage
+- `Path("reports") / "2024"`  
+  construit un chemin portable (`reports/2024`)
+- `parents=True`  
+  crée aussi les dossiers parents manquants
+- `write_text(...)`  
+  écrit le fichier
+- `move` vs `copy2`  
+  archive “en déplaçant” vs “en gardant l’original”
+
+### Où c’est
 - `python demos/lab11_organize_reports.py`
-- Idée reprise : `reports/daily/...`, `reports/monthly/...` dans la CLI
+- CLI finale : `reports/daily/...`, `reports/monthly/...`
 
-### Phrase orale type
-> « On crée reports/année, on écrit des .txt, on archive avec move/copy selon le nom de fichier. »
+### Phrase orale
+> « pathlib crée l’arborescence, on écrit des .txt, puis move/copy selon des règles de nommage. »
 
 ---
 
 ## Lab 12 — datetime / time / calendar
 
 ### En une phrase
-On horodate les fichiers (`datetime.now`), on calcule une **revue +30 jours** (`timedelta`), on mesure la durée (`time`), on affiche calendrier / année bissextile (`calendar`).
+On prend “maintenant”, on fabrique un nom de fichier horodaté, on calcule une date +30 jours, on mesure une durée, on affiche un calendrier.
 
-### Concept
+### Code
 ```python
+from datetime import datetime, timedelta
+import time
+import calendar
+
 now = datetime.now()
-filename = f"report_{now:%Y-%m-%d_%H%M%S}.txt"
+filename = f"report_{now.strftime('%Y-%m-%d_%H%M%S')}.txt"
 next_review = now + timedelta(days=30)
-calendar.isleap(now.year)
-calendar.month(now.year, now.month)
+
+start = time.time()
+# ... travail ...
+duration = time.time() - start
+
+calendar.isleap(now.year)          # True/False année bissextile
+print(calendar.month(now.year, now.month))
 ```
 
-### Pourquoi ça compte
-Les managers ont besoin de rapports **datés**, planifiables, reproductibles.
+### Décodage
+- `datetime.now()`  
+  date + heure actuelles
+- `strftime('...')`  
+  formate en texte selon un motif :
+  - `%Y` année 4 chiffres
+  - `%m` mois
+  - `%d` jour
+  - `%H%M%S` heure/minute/seconde
+- `timedelta(days=30)`  
+  “une durée de 30 jours”
+- `now + timedelta(...)`  
+  date de revue
+- `time.time()`  
+  horodatage machine (secondes) ; différence = durée
+- `calendar.isleap`  
+  bissextile ?
+- `calendar.month`  
+  petit calendrier texte du mois
 
-### Où c’est dans le code
+### Où c’est
 - `python demos/lab12_timestamped_report.py`
-- Rapports CLI : dates dans noms + chemins `daily/YYYY-MM-DD`, `monthly/YYYY-MM`
+- Rapports CLI datés
 
-### Phrase orale type
-> « Les noms de fichiers portent un timestamp. On ajoute 30 jours pour la prochaine revue, et on utilise calendar pour le mois / leap year. »
+### Phrase orale
+> « Timestamp dans le nom de fichier, next review = now + 30 jours, durée avec time.time, calendrier avec calendar. »
 
 ---
 
-## Tâche finale — Assemblage CLI
+## Tâche finale — CLI qui assemble tout
 
 ### En une phrase
-On branche tout dans **`python -m pymart.cli`** : import → store → orders → reports sur disque.
+`pymart.cli` est le “tableau de bord” : import → commandes → rapports, en réutilisant les concepts des labs.
 
-### Ce que tu dois pouvoir démontrer
-
+### Commandes à savoir lancer
 ```bash
 python -m pymart.cli import --products data/products.txt --customers data/customers.txt --orders data/orders.txt
 python -m pymart.cli order list
@@ -354,61 +694,67 @@ python -m pymart.cli report --type daily --date 2026-06-30 --out reports/
 python -m pymart.cli report --type monthly --month 2026-06 --out reports/
 ```
 
-### Comment les labs se reconnectent
+### Décodage architecture (ce que tu dis à l’oral)
+| Dossier | Rôle simple |
+|---------|-------------|
+| `pymart/models` | objets métier (Product, Customer, Order…) |
+| `pymart/io` | lire/nettoyer les fichiers (souvent en streaming) |
+| `pymart/services` | logique + mémoire/persistance (`.pymart_store.json`) |
+| `pymart/reports` | écrire les rapports sur disque |
+| `pymart/cli.py` | arguments terminal (`argparse`) |
+| `pymart/exceptions.py` | erreurs métier |
 
-| Besoin final | Lab(s) |
-|--------------|--------|
-| Package propre | 1 |
-| Install reproductible | 2 |
-| Nettoyage texte | 3, 4 |
+### Lien labs → finale
+| Besoin | Vient du lab |
+|--------|--------------|
+| Package | 1 |
+| Install deps | 2 |
+| Nettoyage texte | 3–4 |
 | Import robuste | 5, 9 |
-| Modèle Product/Customer/Order | 6–8 |
-| Stream parsing | 10 |
-| Écrire/archiver rapports | 11, 12 |
-| CLI | finale (`pymart/cli.py`) |
-
-### Structure à citer à l’oral
-> « `models` pour le domaine, `io` pour parser en streaming, `services.store` pour l’état, `reports` pour écrire, `cli` pour l’utilisateur. »
+| Classes / héritage | 6–8 |
+| Streaming | 10 |
+| Fichiers + dates | 11–12 |
+| CLI | finale |
 
 ---
 
-## Fiche de révision 10 minutes (veille d’oral)
+## Fiche 10 minutes (veille)
 
-1. **Package** = dossier + imports (`pymart`)
-2. **venv + requirements** = isolation deps
-3. **Strings** = split/strip/normalize
-4. **Types + sort** = int/float puis `sort(key=...)`
-5. **try/except/else/finally** = 1 ligne mauvaise ≠ crash total
-6. **Classe** = état + méthodes
-7. **property / class / static / __** = contrôle d’accès
-8. **héritage + describe()** = polymorphisme
-9. **PyMartError** = erreurs métier contextualisées
-10. **yield** = streaming mémoire-friendly
-11. **pathlib/shutil** = organiser fichiers
-12. **datetime/calendar** = rapports datés
-13. **CLI finale** = assemble le tout
-
----
-
-## Mini glossaire
-
-| Mot | Sens simple |
-|-----|-------------|
-| Package | Dossier Python importable |
-| OOP | Programmer avec des objets/classes |
-| Encapsulation | Cacher l’interne, exposer une API sûre |
-| Héritage | Sous-classe réutilise/étend la base |
-| Polymorphisme | Même méthode, comportements différents |
-| Generator | Fonction qui `yield`, paresseuse |
-| CLI | Programme piloté en ligne de commande |
-| Idempotent | Re-exécuter sans casser l’état |
+1. Package = dossier importable (`__init__.py`)
+2. venv + requirements = isolation des libs
+3. split/strip/lower/title = nettoyer du texte
+4. `sort(key=lambda r: r[3])` = trier selon le prix (index 3) ; `lambda` = mini-fonction
+5. try/except/else/finally = une ligne pourrie ≠ crash total
+6. class / self / __init__ = objets métier
+7. property / classmethod / staticmethod / `__` = contrôle d’accès
+8. héritage + `super()` + `describe()` = polymorphisme
+9. exceptions custom = erreurs métier avec contexte
+10. `yield` = stream 1 par 1
+11. pathlib/shutil = dossiers/fichiers
+12. datetime/calendar = rapports datés
+13. CLI = assemblage
 
 ---
 
-## Suite (demain / plus tard)
+## Mini glossaire global
 
-1. Relire **ce livre** (30–40 min).
-2. Lancer le **démarrage rapide** du `README.md` une fois.
-3. Ensuite seulement : ajouter de l’**autodoc** (docstrings) dans le code pour lire fichier par fichier.
+| Mot | Sens ultra simple |
+|-----|-------------------|
+| Index | Position dans une liste (`0` = premier) |
+| f-string | `f"prix={x}"` colle variables dans du texte |
+| lambda | petite fonction sans nom |
+| key= | “trie/groupe selon cette valeur” |
+| self | l’objet courant |
+| super() | appelle le parent |
+| yield | renvoie et met en pause |
+| Exception | erreur gérable avec try/except |
+| CLI | programme en ligne de commande |
+| Idempotent | re-run sans casser |
 
-Tu n’as pas besoin de tout mémoriser ligne à ligne : retiens la **phrase orale** de chaque lab + la carte mentale du haut.
+---
+
+## Suite
+
+1. Lis **ce livre** (c’est la priorité).
+2. Lance une fois le quick start du `README.md`.
+3. Plus tard : docstrings autodoc dans le code source.
