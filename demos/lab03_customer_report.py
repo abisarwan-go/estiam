@@ -1,5 +1,7 @@
 """Print a cleaned, standardized PyMart customer report (lab 3)."""
 
+import _bootstrap  # noqa: F401
+
 from pymart.customers import INVALID, normalize_record
 
 RAW_CUSTOMERS = [

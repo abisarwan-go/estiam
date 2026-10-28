@@ -1,5 +1,7 @@
 """Demonstrate validated properties, class/static methods, and encapsulation (lab 7)."""
 
+import _bootstrap  # noqa: F401
+
 from pymart.models import Customer, Product
 
 

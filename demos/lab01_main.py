@@ -1,3 +1,5 @@
+import _bootstrap  # noqa: F401
+
 from tabulate import tabulate
 
 from pymart.inventory.stock import add_stock, get_stock

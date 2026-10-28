@@ -34,12 +34,31 @@ State is persisted in `.pymart_store.json` (override with `--store`).
 
 ## Package layout
 
+```
+mini-projet/
+├── README.md
+├── DEMO.md
+├── requirements.txt
+├── data/                 # sample POS extracts
+├── pymart/               # package + CLI
+├── demos/                # lab demo scripts
+└── tache_md/             # assignment notes
+```
+
 - `pymart/models` — Product hierarchy, Customer, Order
 - `pymart/io` — streaming parsers (generators)
 - `pymart/services` — import/order store
 - `pymart/reports` — daily/monthly writers
 - `pymart/cli.py` — argparse entry point (`python -m pymart.cli`)
-- `data/` — sample messy extracts for demos
+- `demos/` — one script per lab (see `demos/README.md`)
+
+## Lab demos
+
+```bash
+python demos/lab01_main.py
+python demos/lab08_catalog_demo.py
+# ...
+```
 
 ## Notes
 

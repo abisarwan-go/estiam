@@ -1,5 +1,7 @@
 """Polymorphic product catalog demo (lab 8)."""
 
+import _bootstrap  # noqa: F401
+
 from pymart.models import ElectronicProduct, PerishableProduct, Product
 
 

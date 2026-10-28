@@ -1,5 +1,7 @@
 """Print a cleaned, price-sorted PyMart sales report (lab 4)."""
 
+import _bootstrap  # noqa: F401
+
 from pymart.sales import clean_sales
 
 RAW_SALES = [
