@@ -75,6 +75,10 @@ class Product:
         self.price = self.price * (1 - percentage / 100)
         return self.price
 
+    def describe(self) -> str:
+        """Canonical polymorphic description shared by all products."""
+        return f"{self.sku} | {self.name} | ${self.price:.2f}"
+
     def __str__(self) -> str:
         return (
             f"SKU={self.sku} | Name={self.name} | "
