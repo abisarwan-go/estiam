@@ -554,7 +554,34 @@ high = (r for r in read_sales_records(data) if r["total"] >= 200)
 - `( ... )` avec `for` = generator (paresseux)
 - `[ ... ]` serait une list comprehension (charge tout)
 
-### Closure (filtre configurable)
+### Closure (filtre configurable) — version AUTOdoc complète
+
+#### But métier
+On veut une fonction du style :
+- “est-ce que cette vente est >= 200 ?” → True/False
+- et plus tard “>= 500 ?” sans réécrire tout le code
+
+#### Une vente, concrètement, c’est quoi ?
+Dans ce lab, une vente nettoyée est un **dictionnaire** :
+
+```python
+une_vente = {
+    "order_id": 1000043,
+    "sku": "SKU-00017",
+    "total": 1299.0,      # ← le montant qu’on compare
+    "payment_method": "card",
+}
+```
+
+Donc `une_vente` n’est **pas magique** : c’est juste **une variable** que TU crées (ou que `read_sales_records` te donne).
+
+Lire le total :
+```python
+une_vente["total"]   # → 1299.0
+```
+(`["total"]` = “dans ce dictionnaire, prends la valeur de la clé `"total"`”)
+
+#### Le code, recopié
 ```python
 def make_threshold_filter(min_total):
     def keep(record):
@@ -562,13 +589,102 @@ def make_threshold_filter(min_total):
     return keep
 
 keep_high = make_threshold_filter(200)
-keep_high(une_vente)  # True/False
+print(keep_high(une_vente))   # True, car 1299.0 >= 200
 ```
 
-### Décodage closure
-- `make_threshold_filter(200)` crée et **retourne** la fonction `keep`
-- `keep` “se rappelle” que `min_total` vaut `200`
-- Ça évite les variables globales
+#### Décodage LIGNE PAR LIGNE
+
+**1) `def make_threshold_filter(min_total):`**  
+Fonction “usine”. Tu lui donnes un seuil, ex. `200`.  
+`min_total` = nom du paramètre (le seuil).
+
+**2) `def keep(record):` (à l’intérieur)**  
+Fonction **interne**.  
+`record` = “une vente” qu’on testera plus tard.  
+Elle n’est pas encore appelée ici : on est en train de la **définir**.
+
+**3) `return record["total"] >= min_total`**  
+Compare :
+- le total de la vente (`record["total"]`)
+- au seuil mémorisé (`min_total`)  
+Résultat : `True` ou `False`  
+Exemple mental : `1299.0 >= 200` → `True`
+
+**4) `return keep`  ← POURQUOI on return keep ?**  
+Parce que l’usine ne doit PAS encore tester une vente.  
+Elle doit **fabriquer et rendre** l’outil de test.
+
+Analogie :
+- `make_threshold_filter(200)` = “fabrique-moi un détecteur réglé à 200”
+- `return keep` = “voici le détecteur”
+- Tu ranges ce détecteur dans une variable : `keep_high`
+
+Si tu faisais `return keep(une_vente)` ici, tu testerais **tout de suite** une seule vente et tu perdrais le détecteur réutilisable.
+
+**5) `keep_high = make_threshold_filter(200)`**  
+Appelle l’usine avec seuil 200.  
+`keep_high` devient **une fonction** (le `keep` interne), déjà “réglée” à 200.
+
+Important : après cette ligne, `keep_high` **est appelable** comme une fonction normale.
+
+**6) `keep_high(une_vente)` — comment on “met” une_vente ?**  
+Tu la passes **entre parenthèses**, comme n’importe quel argument :
+
+```python
+une_vente = {"total": 1299.0, "sku": "SKU-00017"}   # 1) tu as une vente
+resultat = keep_high(une_vente)                     # 2) tu la donnes au filtre
+print(resultat)                                     # 3) True ou False
+```
+
+Équivalent mental de cet appel :
+```python
+# Python fait à peu près :
+record = une_vente
+min_total = 200          # souvenir de la fabrication
+return record["total"] >= min_total
+```
+
+#### Exemple complet exécutable dans ta tête
+```python
+def make_threshold_filter(min_total):
+    def keep(record):
+        return record["total"] >= min_total
+    return keep
+
+# 1) fabriquer DEUX filtres différents
+keep_high = make_threshold_filter(200)
+keep_vip  = make_threshold_filter(1000)
+
+# 2) deux ventes concrètes
+vente_A = {"order_id": 1, "total": 35.98}
+vente_B = {"order_id": 2, "total": 1299.0}
+
+# 3) tester
+keep_high(vente_A)  # 35.98 >= 200  → False
+keep_high(vente_B)  # 1299 >= 200   → True
+keep_vip(vente_B)   # 1299 >= 1000  → True
+keep_vip(vente_A)   # 35.98 >= 1000 → False
+```
+
+#### Pourquoi c’est une “closure” ?
+`keep` utilise `min_total` qui vit **autour** d’elle (dans `make_threshold_filter`).  
+Même après que `make_threshold_filter` a fini, `keep` **se souvient** du seuil.  
+Ce “souvenir” = closure.
+
+#### Lien avec le streaming
+```python
+keep_high = make_threshold_filter(200)
+high = (vente for vente in read_sales_records(data) if keep_high(vente))
+```
+Décodage :
+- pour chaque `vente` du flux
+- on appelle `keep_high(vente)`
+- si `True`, on garde la vente dans `high`
+
+#### Phrase anti-blocage
+> « `return keep` = je renvoie la FONCTION filtre, pas encore un True/False.  
+> `une_vente` = un dict avec une clé `"total"`.  
+> Je l’utilise en l’passant en argument : `keep_high(une_vente)`. »
 
 ### Où c’est
 - `pymart/streaming/sales.py`
