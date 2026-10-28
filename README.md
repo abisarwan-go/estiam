@@ -3,7 +3,8 @@
 Toolkit Python en ligne de commande pour les opérations quotidiennes de **PyMart** : import d’extraits POS (produits, clients, commandes), validation/nettoyage des données, traitement des commandes, et génération de rapports datés (journalier / mensuel) archivés sur disque.
 
 Ce README est la doc **technique** (setup, CLI, formats, architecture).  
-Pour **apprendre / réviser les concepts lab par lab** (oral, veille d’examen) : lire **[LIVRE_CONCEPTS.md](./LIVRE_CONCEPTS.md)** d’abord.
+Pour **apprendre / réviser les concepts lab par lab** (oral, veille d’examen) : lire **[LIVRE_CONCEPTS.md](./LIVRE_CONCEPTS.md)** d’abord.  
+Pour la **preuve de soumission** (procédure + captures CLI / import / rapports / erreurs) : **[preuves/PROCEDURE_PREUVES.html](./preuves/PROCEDURE_PREUVES.html)** (export PDF) — détail dans **[PREUVE_SOUMISSION.md](./PREUVE_SOUMISSION.md)**.
 
 ---
 
