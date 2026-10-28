@@ -27,6 +27,20 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
+## Tests intégrés
+
+```bash
+python -m pytest
+```
+
+Couverture principale :
+
+- parsers (`tests/test_parsers.py`)
+- models / polymorphisme (`tests/test_models.py`)
+- import + store + persistence (`tests/test_store_integration.py`)
+- rapports daily/monthly (`tests/test_reports.py`)
+- CLI E2E (`tests/test_cli.py`)
+
 Dépendances tierces (`requirements.txt`) :
 
 | Package | Usage |
@@ -58,13 +72,16 @@ python -m pymart.cli import \
   --customers data/customers.txt \
   --orders data/orders.txt
 
-# 3) lister les commandes importées
+# 3) résumé + lister les commandes
+python -m pymart.cli status
 python -m pymart.cli order list
 
 # 4) générer les rapports
 python -m pymart.cli report --type daily --date 2026-06-30 --out reports/
 python -m pymart.cli report --type monthly --month 2026-06 --out reports/
 ```
+
+Alias CLI aussi disponible : `python -m pymart ...`
 
 Résultat attendu à l’import (fichiers d’exemple) :
 

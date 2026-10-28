@@ -37,6 +37,11 @@ class Product:
     def total_products(cls) -> int:
         return cls._total_products
 
+    @classmethod
+    def reset_counter(cls) -> None:
+        """Reset instance counter (useful in tests)."""
+        cls._total_products = 0
+
     @property
     def sku(self) -> str | None:
         return self.__sku
