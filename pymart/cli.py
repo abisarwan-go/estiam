@@ -66,6 +66,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory (default: reports/)",
     )
 
+    sub.add_parser("status", help="Show store summary (products/customers/orders)")
+
     return parser
 
 
@@ -166,6 +168,19 @@ def cmd_report(store: Store, args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_status(store: Store, _args: argparse.Namespace) -> int:
+    print("PyMart store status")
+    print(f"  products : {len(store.products)}")
+    print(f"  customers: {len(store.customers)}")
+    print(f"  orders   : {len(store.orders)}")
+    print(f"  import errors logged: {len(store.import_errors)}")
+    if store.products:
+        print("  catalog:")
+        for product in list(store.products.values())[:5]:
+            print(f"    - {product.describe()}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -178,6 +193,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_order(store, args)
     if args.command == "report":
         return cmd_report(store, args)
+    if args.command == "status":
+        return cmd_status(store, args)
 
     parser.print_help()
     return 2
