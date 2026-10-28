@@ -6,4 +6,5 @@ __pycache__/
 venv/
 .env
 pymart_workspace/
-reports/
+/reports/
+.pymart_store.json

@@ -1,8 +1,65 @@
 """PyMart domain exception hierarchy."""
 
+from __future__ import annotations
+
 
 class PyMartError(Exception):
     """Base class for all PyMart domain exceptions."""
+
+
+class DataValidationError(PyMartError):
+    """Raised when a parsed record violates business rules."""
+
+    def __init__(self, message: str, *, source: str | None = None, line: int | None = None):
+        self.source = source
+        self.line = line
+        context = []
+        if source:
+            context.append(f"file={source}")
+        if line is not None:
+            context.append(f"line={line}")
+        prefix = f"[{', '.join(context)}] " if context else ""
+        super().__init__(f"{prefix}{message}")
+
+
+class RecordFormatError(PyMartError):
+    """Raised when a raw record cannot be parsed into expected fields."""
+
+    def __init__(self, message: str, *, source: str | None = None, line: int | None = None):
+        self.source = source
+        self.line = line
+        context = []
+        if source:
+            context.append(f"file={source}")
+        if line is not None:
+            context.append(f"line={line}")
+        prefix = f"[{', '.join(context)}] " if context else ""
+        super().__init__(f"{prefix}{message}")
+
+
+class UnknownProductError(PyMartError):
+    """Raised when an order references an unknown SKU."""
+
+    def __init__(self, sku: str, *, source: str | None = None, line: int | None = None):
+        self.sku = sku
+        self.source = source
+        self.line = line
+        context = []
+        if source:
+            context.append(f"file={source}")
+        if line is not None:
+            context.append(f"line={line}")
+        prefix = f"[{', '.join(context)}] " if context else ""
+        super().__init__(f"{prefix}Unknown product SKU '{sku}'.")
+
+
+class DuplicateIdError(PyMartError):
+    """Raised when an identifier already exists in the catalog/store."""
+
+    def __init__(self, entity: str, identifier: str):
+        self.entity = entity
+        self.identifier = identifier
+        super().__init__(f"Duplicate {entity} id '{identifier}'.")
 
 
 class InsufficientStockError(PyMartError):
