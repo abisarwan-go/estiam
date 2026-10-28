@@ -24,7 +24,20 @@ Choisis **une** option (la plus rapide pour toi = **captures**).
 
 ## Option A (recommandée) — Document + screenshots
 
-### Fichier à rendre
+### ✅ Déjà prêt dans le repo
+Le pack complet est dans **`preuves/`** :
+
+| Fichier | Usage |
+|---------|--------|
+| [`preuves/PROCEDURE_PREUVES.html`](./preuves/PROCEDURE_PREUVES.html) | **À ouvrir dans le navigateur → Imprimer → Enregistrer en PDF** (rendu type screenshots) |
+| [`preuves/PROCEDURE_PREUVES.md`](./preuves/PROCEDURE_PREUVES.md) | Même contenu en Markdown |
+| `preuves/captures/*.txt` | Sorties terminal réelles |
+| `preuves/rapports/*.txt` | Copies des 3 fichiers de rapports générés |
+| `bash preuves/regenerate_captures.sh` | Relancer le parcours et régénérer les preuves |
+
+**À rendre demain :** le **PDF** exporté depuis le HTML (ou le dossier `preuves/` zippé).
+
+### Fichier à rendre (si tu refais à la main)
 Crée un dossier `preuves/` (ou un PDF / Google Doc) avec **5 captures** + 2–3 phrases chacune.
 
 ### Avant de capturer
