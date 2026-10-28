@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import _bootstrap  # noqa: F401
+
 import logging
 from collections import Counter
 

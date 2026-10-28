@@ -1,5 +1,7 @@
 """Exercise Product domain exceptions: success, stock error, discount error."""
 
+import _bootstrap  # noqa: F401
+
 from pymart import (
     InsufficientStockError,
     InvalidDiscountError,

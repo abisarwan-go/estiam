@@ -1,5 +1,7 @@
 """Mini-store demo for Product and Customer classes (lab 6)."""
 
+import _bootstrap  # noqa: F401
+
 from pymart.models import Customer, Product
 
 

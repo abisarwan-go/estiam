@@ -1,5 +1,7 @@
 # PyMart final demo checklist
 
+Lab scripts live under `demos/` (run from project root). The final product entry point is `python -m pymart.cli`.
+
 ## 1. Help
 
 ```bash
