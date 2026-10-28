@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pymart.exceptions import InsufficientStockError, InvalidDiscountError
+
 
 class Product:
     _total_products = 0
@@ -63,6 +65,26 @@ class Product:
             raise ValueError("price must be >= 0")
         self._price = round(float(value), 2)
 
+    def sell(self, qty: int) -> int:
+        """Reduce on-hand stock for a sale.
+
+        Returns:
+            Remaining quantity after the sale.
+        """
+        if not isinstance(qty, int) or isinstance(qty, bool):
+            raise TypeError("qty must be an integer")
+        if qty <= 0:
+            raise ValueError("qty must be positive")
+        if qty > self.quantity:
+            raise InsufficientStockError(
+                sku=str(self.sku),
+                requested_qty=qty,
+                available_stock=self.quantity,
+            )
+
+        self.quantity -= qty
+        return self.quantity
+
     def apply_discount(self, percentage: float) -> float:
         """Reduce price by a percentage from 0 to 100."""
         if not isinstance(percentage, (int, float)) or isinstance(
@@ -70,7 +92,12 @@ class Product:
         ):
             raise TypeError("percentage must be a number")
         if percentage < 0 or percentage > 100:
-            raise ValueError("percentage must be between 0 and 100")
+            raise InvalidDiscountError(
+                sku=str(self.sku),
+                percentage=percentage,
+                min_percent=0,
+                max_percent=100,
+            )
 
         self.price = self.price * (1 - percentage / 100)
         return self.price
