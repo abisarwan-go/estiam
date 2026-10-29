@@ -1,16 +1,11 @@
-"""Dated operational report writers for PyMart."""
-
-from __future__ import annotations
+"""Write dated reports to disk (daily + monthly + stock)."""
 
 import calendar
-from collections import defaultdict
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 
-from pymart.services.store import Store
 
-
-def _ensure_archive_dirs(out_dir: Path, day: date) -> Path:
+def _ensure_archive_dirs(out_dir, day):
     day_dir = out_dir / "daily" / day.strftime("%Y-%m-%d")
     month_dir = out_dir / "monthly" / day.strftime("%Y-%m")
     day_dir.mkdir(parents=True, exist_ok=True)
@@ -18,19 +13,17 @@ def _ensure_archive_dirs(out_dir: Path, day: date) -> Path:
     return day_dir
 
 
-def write_daily_report(
-    store: Store,
-    *,
-    report_date: date,
-    out_dir: str | Path = "reports",
-) -> Path:
+def write_daily_report(store, report_date, out_dir="reports"):
     out = Path(out_dir)
     day_dir = _ensure_archive_dirs(out, report_date)
     filename = f"daily_sales_{report_date.isoformat()}.txt"
     path = day_dir / filename
 
     orders = list(store.iter_orders_for_date(report_date))
-    revenue = round(sum(order.total for order in orders), 2)
+    revenue = 0.0
+    for order in orders:
+        revenue = revenue + order.total
+    revenue = round(revenue, 2)
     next_review = report_date + timedelta(days=30)
 
     lines = [
@@ -52,12 +45,8 @@ def write_daily_report(
             for line in order.lines:
                 lines.append(f"      • {line.describe()}")
 
-    lines.extend(
-        [
-            "",
-            "Catalog snapshot (polymorphic describe):",
-        ]
-    )
+    lines.append("")
+    lines.append("Catalog snapshot (polymorphic describe):")
     for product in store.products.values():
         lines.append(f"  - {product.describe()}")
 
@@ -65,13 +54,18 @@ def write_daily_report(
     return path
 
 
-def write_monthly_report(
-    store: Store,
-    *,
-    year: int,
-    month: int,
-    out_dir: str | Path = "reports",
-) -> Path:
+def _top_items(counter, limit=5):
+    """Return the top N items from a {key: number} dict."""
+    items = list(counter.items())
+
+    def by_value(item):
+        return item[1]
+
+    items.sort(key=by_value, reverse=True)
+    return items[:limit]
+
+
+def write_monthly_report(store, year, month, out_dir="reports"):
     out = Path(out_dir)
     month_key = f"{year:04d}-{month:02d}"
     month_dir = out / "monthly" / month_key
@@ -79,19 +73,26 @@ def write_monthly_report(
     path = month_dir / f"monthly_summary_{month_key}.txt"
 
     orders = list(store.iter_orders_for_month(year, month))
-    revenue = round(sum(order.total for order in orders), 2)
-
-    by_sku: dict[str, int] = defaultdict(int)
-    by_customer: dict[str, float] = defaultdict(float)
+    revenue = 0.0
     for order in orders:
-        by_customer[order.customer_id] += order.total
-        for line in order.lines:
-            by_sku[line.sku] += line.quantity
+        revenue = revenue + order.total
+    revenue = round(revenue, 2)
 
-    top_skus = sorted(by_sku.items(), key=lambda item: item[1], reverse=True)[:5]
-    top_customers = sorted(
-        by_customer.items(), key=lambda item: item[1], reverse=True
-    )[:5]
+    by_sku = {}
+    by_customer = {}
+    for order in orders:
+        if order.customer_id not in by_customer:
+            by_customer[order.customer_id] = 0.0
+        by_customer[order.customer_id] = (
+            by_customer[order.customer_id] + order.total
+        )
+        for line in order.lines:
+            if line.sku not in by_sku:
+                by_sku[line.sku] = 0
+            by_sku[line.sku] = by_sku[line.sku] + line.quantity
+
+    top_skus = _top_items(by_sku, limit=5)
+    top_customers = _top_items(by_customer, limit=5)
 
     _weekday, last_day = calendar.monthrange(year, month)
     month_calendar = calendar.month(year, month)
@@ -120,27 +121,29 @@ def write_monthly_report(
         lines.append("  (none)")
     else:
         for customer_id, spend in top_customers:
-            name = store.customers.get(customer_id)
-            label = name.name if name else customer_id
+            customer = store.customers.get(customer_id)
+            if customer:
+                label = customer.name
+            else:
+                label = customer_id
             lines.append(f"  - {label} ({customer_id}): ${spend:.2f}")
 
-    lines.extend(
-        [
-            "",
-            "Failed/rejected import messages:",
-        ]
-    )
+    lines.append("")
+    lines.append("Failed/rejected import messages:")
     if not store.import_errors:
         lines.append("  (none)")
     else:
         for err in store.import_errors[-20:]:
             lines.append(f"  - {err}")
 
-    lines.extend(["", "Month calendar:", month_calendar.rstrip("\n"), ""])
+    lines.append("")
+    lines.append("Month calendar:")
+    lines.append(month_calendar.rstrip("\n"))
+    lines.append("")
 
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    # Also keep a stock level report alongside monthly outputs.
+    # Second report file: stock levels for the same month folder.
     stock_path = month_dir / f"stock_levels_{month_key}.txt"
     stock_lines = [
         "PyMart Stock Level Report",
@@ -149,7 +152,13 @@ def write_monthly_report(
         f"Generated at: {datetime.now().isoformat(timespec='seconds')}",
         "",
     ]
-    for product in sorted(store.products.values(), key=lambda p: str(p.sku)):
+    products = list(store.products.values())
+
+    def by_sku_name(product):
+        return str(product.sku)
+
+    products.sort(key=by_sku_name)
+    for product in products:
         stock_lines.append(
             f"{product.sku:<12} qty={product.quantity:<5} "
             f"price=${product.price:<8.2f} {product.describe()}"

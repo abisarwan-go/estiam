@@ -1,7 +1,5 @@
 """PyMart back-office CLI: import, orders, and reports."""
 
-from __future__ import annotations
-
 import argparse
 import sys
 from datetime import date, datetime
@@ -11,16 +9,16 @@ from pymart.reports.writers import write_daily_report, write_monthly_report
 from pymart.services.store import Store
 
 
-def _parse_date(value: str) -> date:
+def _parse_date(value):
     return datetime.strptime(value, "%Y-%m-%d").date()
 
 
-def _parse_month(value: str) -> tuple[int, int]:
+def _parse_month(value):
     parsed = datetime.strptime(value, "%Y-%m")
     return parsed.year, parsed.month
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser():
     parser = argparse.ArgumentParser(
         prog="python -m pymart.cli",
         description="PyMart back-office toolkit",
@@ -71,8 +69,8 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def cmd_import(store: Store, args: argparse.Namespace) -> int:
-    if not any([args.products, args.customers, args.orders]):
+def cmd_import(store, args):
+    if not args.products and not args.customers and not args.orders:
         print(
             "Error: provide at least one of --products/--customers/--orders",
             file=sys.stderr,
@@ -104,7 +102,7 @@ def cmd_import(store: Store, args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_order(store: Store, args: argparse.Namespace) -> int:
+def cmd_order(store, args):
     try:
         if args.order_command == "list":
             orders = store.list_orders()
@@ -115,7 +113,11 @@ def cmd_order(store: Store, args: argparse.Namespace) -> int:
                 print(order.describe())
             return 0
 
-        order_date = _parse_date(args.date) if args.date else date.today()
+        if args.date:
+            order_date = _parse_date(args.date)
+        else:
+            order_date = date.today()
+
         order = store.create_order(
             order_id=args.id,
             customer_id=args.customer.upper(),
@@ -134,19 +136,27 @@ def cmd_order(store: Store, args: argparse.Namespace) -> int:
         return 2
 
 
-def cmd_report(store: Store, args: argparse.Namespace) -> int:
+def cmd_report(store, args):
     try:
         if args.report_type == "daily":
             if not args.date:
-                print("Error: --date YYYY-MM-DD is required for daily", file=sys.stderr)
+                print(
+                    "Error: --date YYYY-MM-DD is required for daily",
+                    file=sys.stderr,
+                )
                 return 2
             day = _parse_date(args.date)
-            path = write_daily_report(store, report_date=day, out_dir=args.out)
+            path = write_daily_report(
+                store, report_date=day, out_dir=args.out
+            )
             print(f"Wrote daily report: {path}")
             return 0
 
         if not args.month:
-            print("Error: --month YYYY-MM is required for monthly", file=sys.stderr)
+            print(
+                "Error: --month YYYY-MM is required for monthly",
+                file=sys.stderr,
+            )
             return 2
         year, month = _parse_month(args.month)
         path = write_monthly_report(
@@ -168,7 +178,7 @@ def cmd_report(store: Store, args: argparse.Namespace) -> int:
         return 1
 
 
-def cmd_status(store: Store, _args: argparse.Namespace) -> int:
+def cmd_status(store, _args):
     print("PyMart store status")
     print(f"  products : {len(store.products)}")
     print(f"  customers: {len(store.customers)}")
@@ -176,12 +186,16 @@ def cmd_status(store: Store, _args: argparse.Namespace) -> int:
     print(f"  import errors logged: {len(store.import_errors)}")
     if store.products:
         print("  catalog:")
-        for product in list(store.products.values())[:5]:
+        count = 0
+        for product in store.products.values():
             print(f"    - {product.describe()}")
+            count = count + 1
+            if count >= 5:
+                break
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
     store = Store(state_path=args.store)

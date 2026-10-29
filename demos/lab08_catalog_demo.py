@@ -5,19 +5,19 @@ import _bootstrap  # noqa: F401
 from pymart.models import ElectronicProduct, PerishableProduct, Product
 
 
-def print_catalog(products: list[Product]) -> None:
+def print_catalog(products):
     # No isinstance checks. No branching by type.
     for product in products:
         print(product.describe())
 
 
-def main() -> None:
+def main():
     p1 = Product(sku="GN-100", name="Gift Card", price=25.00, quantity=50)
     p2 = PerishableProduct(
         sku="ML-001",
         name="Milk",
         price=3.49,
-        expiration_date="2027-08-01",
+        expiry_date="2027-08-01",
         storage_temp_c=4,
         quantity=24,
     )
@@ -25,7 +25,7 @@ def main() -> None:
         sku="HP-200",
         name="Headphones",
         price=79.99,
-        warranty_years=2,
+        warranty_months=24,
         power_watts=5,
         quantity=12,
     )
@@ -33,12 +33,12 @@ def main() -> None:
         sku="ST-010",
         name="Strawberries",
         price=5.99,
-        expiration_date="2027-07-31",
+        expiry_date="2027-07-31",
         storage_temp_c=2,
         quantity=40,
     )
 
-    products: list[Product] = [p1, p2, p3, p4]
+    products = [p1, p2, p3, p4]
     print_catalog(products)
 
     print()

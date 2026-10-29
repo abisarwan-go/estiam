@@ -1,71 +1,65 @@
-"""PyMart domain exception hierarchy."""
-
-from __future__ import annotations
+"""Custom errors used by PyMart."""
 
 
 class PyMartError(Exception):
     """Base class for all PyMart domain exceptions."""
 
 
-class DataValidationError(PyMartError):
-    """Raised when a parsed record violates business rules."""
+def _with_file_line(message, source=None, line=None):
+    """Add [file=..., line=...] in front of a message when available."""
+    parts = []
+    if source:
+        parts.append(f"file={source}")
+    if line is not None:
+        parts.append(f"line={line}")
+    if parts:
+        return f"[{', '.join(parts)}] {message}"
+    return message
 
-    def __init__(self, message: str, *, source: str | None = None, line: int | None = None):
+
+class DataValidationError(PyMartError):
+    """A record was read, but values break a business rule."""
+
+    def __init__(self, message, source=None, line=None):
         self.source = source
         self.line = line
-        context = []
-        if source:
-            context.append(f"file={source}")
-        if line is not None:
-            context.append(f"line={line}")
-        prefix = f"[{', '.join(context)}] " if context else ""
-        super().__init__(f"{prefix}{message}")
+        super().__init__(_with_file_line(message, source, line))
 
 
 class RecordFormatError(PyMartError):
-    """Raised when a raw record cannot be parsed into expected fields."""
+    """A raw line cannot be split into the expected fields."""
 
-    def __init__(self, message: str, *, source: str | None = None, line: int | None = None):
+    def __init__(self, message, source=None, line=None):
         self.source = source
         self.line = line
-        context = []
-        if source:
-            context.append(f"file={source}")
-        if line is not None:
-            context.append(f"line={line}")
-        prefix = f"[{', '.join(context)}] " if context else ""
-        super().__init__(f"{prefix}{message}")
+        super().__init__(_with_file_line(message, source, line))
 
 
 class UnknownProductError(PyMartError):
-    """Raised when an order references an unknown SKU."""
+    """An order mentions a SKU that is not in the catalog."""
 
-    def __init__(self, sku: str, *, source: str | None = None, line: int | None = None):
+    def __init__(self, sku, source=None, line=None):
         self.sku = sku
         self.source = source
         self.line = line
-        context = []
-        if source:
-            context.append(f"file={source}")
-        if line is not None:
-            context.append(f"line={line}")
-        prefix = f"[{', '.join(context)}] " if context else ""
-        super().__init__(f"{prefix}Unknown product SKU '{sku}'.")
+        super().__init__(
+            _with_file_line(f"Unknown product SKU '{sku}'.", source, line)
+        )
 
 
 class DuplicateIdError(PyMartError):
-    """Raised when an identifier already exists in the catalog/store."""
+    """An id (product / customer / order) already exists."""
 
-    def __init__(self, entity: str, identifier: str):
+    def __init__(self, entity, identifier):
         self.entity = entity
         self.identifier = identifier
         super().__init__(f"Duplicate {entity} id '{identifier}'.")
 
 
 class InsufficientStockError(PyMartError):
-    """Raised when requested quantity exceeds available stock."""
+    """Not enough stock for a sale."""
 
-    def __init__(self, sku: str, requested_qty: int, available_stock: int):
+    def __init__(self, sku, requested_qty, available_stock):
         self.sku = sku
         self.requested_qty = requested_qty
         self.available_stock = available_stock
@@ -76,15 +70,9 @@ class InsufficientStockError(PyMartError):
 
 
 class InvalidDiscountError(PyMartError):
-    """Raised when an attempted discount percentage is invalid."""
+    """Discount percentage is outside the allowed range."""
 
-    def __init__(
-        self,
-        sku: str,
-        percentage: float,
-        min_percent: float = 0,
-        max_percent: float = 100,
-    ):
+    def __init__(self, sku, percentage, min_percent=0, max_percent=100):
         self.sku = sku
         self.percentage = percentage
         self.min_percent = min_percent
