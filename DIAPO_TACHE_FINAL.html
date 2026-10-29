@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PyMart — Tâche finale (diapo)</title>
+  <style>
+    :root {
+      --bg: #0c1222;
+      --panel: #141c2e;
+      --ink: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --line: #243044;
+      --code: #0a0f1a;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+    .deck {
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    .slide {
+      display: none;
+      height: 100%;
+      padding: 3.2rem 4.5rem 4.5rem;
+      flex-direction: column;
+      justify-content: center;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #1e3a5f 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 100%, #12324a 0%, transparent 50%),
+        var(--bg);
+    }
+    .slide.active { display: flex; }
+    .slide.center { text-align: center; align-items: center; }
+    h1 {
+      font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+      margin: 0 0 0.6rem;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.2rem);
+      margin: 0 0 1.1rem;
+      letter-spacing: -0.02em;
+      color: #e2e8f0;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      margin: 0 0 1.5rem;
+      max-width: 42rem;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid #1e4970;
+      background: #102338;
+      padding: 0.28rem 0.65rem;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+    ul {
+      margin: 0;
+      padding-left: 1.2rem;
+      font-size: 1.15rem;
+      line-height: 1.55;
+      max-width: 52rem;
+    }
+    li { margin: 0.35rem 0; }
+    li strong { color: #fff; }
+    .grid {
+      display: grid;
+      gap: 1rem;
+      width: min(100%, 980px);
+    }
+    .grid.two { grid-template-columns: 1fr 1fr; }
+    .grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1rem 1.15rem;
+    }
+    .card h3 {
+      margin: 0 0 0.45rem;
+      font-size: 1rem;
+      color: var(--accent);
+    }
+    .card p, .card li {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 0.98rem;
+      line-height: 1.45;
+    }
+    .card ul { padding-left: 1rem; }
+    pre, .cmd {
+      background: var(--code);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.9rem 1.05rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      overflow-x: auto;
+      color: #e2e8f0;
+      width: min(100%, 920px);
+      white-space: pre-wrap;
+    }
+    .cmd + .cmd { margin-top: 0.6rem; }
+    table {
+      border-collapse: collapse;
+      width: min(100%, 920px);
+      font-size: 1rem;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 0.55rem 0.75rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #182338; color: var(--accent); }
+    td { background: #121a2b; color: #dbe4f0; }
+    .ok { color: var(--ok); }
+    .muted { color: var(--muted); }
+    .bar {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.65rem 1.2rem;
+      background: rgba(8, 12, 22, 0.88);
+      border-top: 1px solid var(--line);
+      font-size: 0.85rem;
+      color: var(--muted);
+      z-index: 5;
+    }
+    .bar .hint span {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0.1rem 0.4rem;
+      margin: 0 0.15rem;
+      color: #cbd5e1;
+    }
+    .progress {
+      position: fixed;
+      top: 0; left: 0; height: 3px;
+      background: var(--accent);
+      width: 0%;
+      z-index: 6;
+    }
+    @media (max-width: 900px) {
+      .slide { padding: 2rem 1.25rem 4rem; }
+      .grid.two, .grid.three { grid-template-columns: 1fr; }
+      ul { font-size: 1.02rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <div class="deck" id="deck">
+
+    <!-- 1 -->
+    <section class="slide center active">
+      <div class="tag">ESTIAM · Tâche finale</div>
+      <h1>PyMart</h1>
+      <p class="subtitle">
+        Back-office toolkit en ligne de commande<br />
+        Import · Validation · Commandes · Rapports datés
+      </p>
+      <div class="cmd">python -m pymart.cli</div>
+    </section>
+
+    <!-- 2 -->
+    <section class="slide">
+      <div class="tag">Plan</div>
+      <h2>Ce que la consigne demande</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Contexte &amp; besoins</h3>
+          <ul>
+            <li>Contexte métier PyMart</li>
+            <li>Exigences fonctionnelles</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Technique</h3>
+          <ul>
+            <li>CLI · import · string/list</li>
+            <li>Exceptions · OOP · package</li>
+            <li>Generators · FS · datetime</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Livrables</h3>
+          <ul>
+            <li>Code + structure</li>
+            <li>Preuves / démo</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Notation</h3>
+          <ul>
+            <li>Grille 100%</li>
+            <li>Checklist de soumission</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="slide">
+      <div class="tag">Business context</div>
+      <h2>Contexte métier</h2>
+      <ul>
+        <li><strong>PyMart</strong> = enseigne retail multi-catégories</li>
+        <li>Le personnel exporte des fichiers texte depuis le <strong>POS</strong></li>
+        <li>Ces exports sont <strong>sales</strong> : champs manquants, séparateurs, casse, nombres/dates invalides</li>
+        <li>Les managers veulent des rapports <strong>daily / monthly</strong> reproductibles et archivables</li>
+      </ul>
+    </section>
+
+    <!-- 4 -->
+    <section class="slide">
+      <div class="tag">Objectif</div>
+      <h2>Ce qu’il faut construire</h2>
+      <p class="subtitle">Application Python production-ready pour les opérations quotidiennes.</p>
+      <div class="grid three">
+        <div class="card"><h3>1. Importer</h3><p>Produits, clients, commandes depuis fichiers texte</p></div>
+        <div class="card"><h3>2. Valider / nettoyer</h3><p>Données sales → représentation interne propre</p></div>
+        <div class="card"><h3>3. Traiter</h3><p>Créer / lister des commandes</p></div>
+        <div class="card"><h3>4. Rapporter</h3><p>Rapports datés à la demande / planifiés</p></div>
+        <div class="card"><h3>5. Robustesse</h3><p>Messages clairs, pas de crash</p></div>
+        <div class="card"><h3>6. Archive</h3><p>Écriture disque, dossiers datés</p></div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="slide">
+      <div class="tag">Functional requirements · CLI</div>
+      <h2>Interface en ligne de commande</h2>
+      <p class="subtitle">Entrée : module <code>-m</code> ou script. Minimum exigé :</p>
+      <table>
+        <tr><th>Exigence</th><th>Chez PyMart</th></tr>
+        <tr><td>Importer des fichiers</td><td><code>import --products --customers --orders</code></td></tr>
+        <tr><td>Créer / lister commandes</td><td><code>order create</code> / <code>order list</code></td></tr>
+        <tr><td>Générer des rapports</td><td><code>report --type daily|monthly</code></td></tr>
+        <tr><td>Erreurs claires sans crash</td><td>messages + code retour, pas de traceback utilisateur</td></tr>
+      </table>
+    </section>
+
+    <!-- 6 -->
+    <section class="slide">
+      <div class="tag">Data importing + string/list</div>
+      <h2>Import &amp; nettoyage des données</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Fichiers d’entrée</h3>
+          <ul>
+            <li>Texte CSV-like (séparateur <code>|</code>)</li>
+            <li>≥ 1 fichier produits</li>
+            <li>≥ 1 fichier clients</li>
+            <li>≥ 1 fichier commandes / lignes</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Techniques demandées</h3>
+          <ul>
+            <li><code>split</code>, <code>strip</code>, <code>join</code>, <code>replace</code></li>
+            <li>casse : <code>upper</code> / <code>title</code> / <code>lower</code></li>
+            <li>filtrage lignes vides / commentaires</li>
+            <li>conversion <code>int</code> / <code>float</code> sécurisée</li>
+          </ul>
+        </div>
+      </div>
+      <p class="subtitle" style="margin-top:1rem">Cas gérés : espaces, colonnes manquantes, nombres invalides, quantités négatives, IDs mal formés.</p>
+    </section>
+
+    <!-- 7 -->
+    <section class="slide">
+      <div class="tag">Exception handling</div>
+      <h2>Exceptions custom</h2>
+      <ul>
+        <li><code>try / except / else / finally</code> pour I/O et parsing</li>
+        <li>≥ <strong>2</strong> classes d’exception custom (exigé)</li>
+        <li>Messages <strong>actionnables</strong> : contexte <code>file=</code> + <code>line=</code></li>
+      </ul>
+      <pre style="margin-top:1rem">PyMartError
+├── DataValidationError
+├── RecordFormatError
+├── UnknownProductError
+├── DuplicateIdError
+├── InsufficientStockError
+└── InvalidDiscountError</pre>
+    </section>
+
+    <!-- 8 -->
+    <section class="slide">
+      <div class="tag">OOP design</div>
+      <h2>Classes, héritage, polymorphisme</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Minimum demandé</h3>
+          <ul>
+            <li><code>Product</code></li>
+            <li><code>Customer</code></li>
+            <li><code>Order</code> (+ <code>OrderLine</code>)</li>
+            <li>+ au moins 1 classe en plus</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Héritage PyMart</h3>
+          <pre style="margin:0;border:0;padding:0;background:transparent">Product
+ ├── PerishableProduct
+ └── ElectronicProduct</pre>
+          <p style="margin-top:0.6rem">Polymorphisme : chaque classe redéfinit <code>describe()</code></p>
+        </div>
+      </div>
+      <div class="cmd" style="margin-top:1rem">for product in products:
+    print(product.describe())   # pas de if isinstance</div>
+    </section>
+
+    <!-- 9 -->
+    <section class="slide">
+      <div class="tag">Custom modules / packages</div>
+      <h2>Package multi-modules</h2>
+      <p class="subtitle">Pas un seul script : séparation des préoccupations.</p>
+      <pre>pymart/
+├── cli.py              # argparse / commandes
+├── models/             # Product, Customer, Order, sous-classes
+├── io/parsers.py       # lecture + nettoyage (stream)
+├── services/store.py   # import, stock, commandes, JSON
+├── reports/writers.py  # daily / monthly / stock
+└── exceptions.py       # erreurs métier</pre>
+    </section>
+
+    <!-- 10 -->
+    <section class="slide">
+      <div class="tag">Generators + file-system</div>
+      <h2>Générateurs &amp; opérations fichiers</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>≥ 1 generator (exigé)</h3>
+          <ul>
+            <li><code>iter_text_rows</code> → <code>yield</code> ligne à ligne</li>
+            <li><code>iter_orders_for_date</code></li>
+            <li><code>iter_orders_for_month</code></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Filesystem</h3>
+          <ul>
+            <li>Créer <code>reports/</code> si absent</li>
+            <li>Écrire les rapports sur disque</li>
+            <li>Archiver par jour / mois</li>
+          </ul>
+        </div>
+      </div>
+      <div class="cmd" style="margin-top:1rem">reports/daily/2026-06-30/daily_sales_2026-06-30.txt
+reports/monthly/2026-06/monthly_summary_2026-06.txt
+reports/monthly/2026-06/stock_levels_2026-06.txt</div>
+    </section>
+
+    <!-- 11 -->
+    <section class="slide">
+      <div class="tag">datetime / time / calendar</div>
+      <h2>Dates &amp; périodes de rapport</h2>
+      <p class="subtitle">La consigne demande ≥ 2 usages parmi :</p>
+      <table>
+        <tr><th>Exigence</th><th>Implémenté</th></tr>
+        <tr><td>Nom de fichier daily avec date</td><td class="ok">✓ <code>daily_sales_YYYY-MM-DD.txt</code></td></tr>
+        <tr><td>Résumé mensuel / bornes calendrier</td><td class="ok">✓ <code>calendar.monthrange</code> + calendrier mois</td></tr>
+        <tr><td>Parser / valider dates d’entrée</td><td class="ok">✓ parsing dates commandes / expiry</td></tr>
+        <tr><td>Comportement “schedule-like”</td><td class="ok">✓ <code>--date</code> / <code>--month</code> + next review (+30 j)</td></tr>
+      </table>
+    </section>
+
+    <!-- 12 -->
+    <section class="slide">
+      <div class="tag">Outputs (minimum)</div>
+      <h2>≥ 2 types de rapports sur disque</h2>
+      <div class="grid three">
+        <div class="card">
+          <h3>Daily sales</h3>
+          <p>Commandes du jour, CA, détails lignes, snapshot catalogue</p>
+        </div>
+        <div class="card">
+          <h3>Monthly summary</h3>
+          <p>Top produits, top clients, erreurs d’import, calendrier</p>
+        </div>
+        <div class="card">
+          <h3>Stock levels</h3>
+          <p>Quantités / prix / <code>describe()</code> polymorphe</p>
+        </div>
+      </div>
+      <p class="subtitle" style="margin-top:1.2rem">Reproductibles : mêmes entrées → mêmes résultats métier.</p>
+    </section>
+
+    <!-- 13 -->
+    <section class="slide">
+      <div class="tag">Example commands</div>
+      <h2>Commandes de la consigne</h2>
+      <div class="cmd">python -m pymart.cli --help</div>
+      <div class="cmd">python -m pymart.cli import \
+  --products data/products.txt \
+  --customers data/customers.txt \
+  --orders data/orders.txt</div>
+      <div class="cmd">python -m pymart.cli report --type daily --date 2026-06-30 --out reports/</div>
+      <div class="cmd">python -m pymart.cli report --type monthly --month 2026-06 --out reports/</div>
+    </section>
+
+    <!-- 14 -->
+    <section class="slide">
+      <div class="tag">Deliverables</div>
+      <h2>Livrables à rendre</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Source code</h3>
+          <ul>
+            <li>Package Python complet</li>
+            <li>Structure claire multi-modules</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Dépendances</h3>
+          <ul>
+            <li><code>requirements.txt</code> si libs tierces</li>
+            <li>CLI final = surtout stdlib</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Preuve (choisir 1)</h3>
+          <ul>
+            <li>Procédure + screenshots</li>
+            <li><strong>ou</strong> démo live / vidéo</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Preuve doit montrer</h3>
+          <ul>
+            <li>Lancer la CLI</li>
+            <li>Import réussi</li>
+            <li>≥ 2 fichiers de rapports</li>
+            <li>Erreurs de validation gérées</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15 -->
+    <section class="slide">
+      <div class="tag">Grading rubric · 100%</div>
+      <h2>Grille de notation</h2>
+      <table>
+        <tr><th>%</th><th>Critère</th><th>Comment on le couvre</th></tr>
+        <tr><td>35%</td><td>Fonctionnalité</td><td>CLI E2E : import, commandes, rapports disque</td></tr>
+        <tr><td>20%</td><td>Qualité / maintenabilité</td><td>Package clair, noms simples, modules séparés</td></tr>
+        <tr><td>20%</td><td>OOP</td><td>héritage Product + <code>describe()</code> polymorphe</td></tr>
+        <tr><td>10%</td><td>Erreurs / robustesse</td><td>exceptions custom + messages file/line</td></tr>
+        <tr><td>10%</td><td>Stdlib</td><td><code>pathlib</code>, <code>datetime</code>, <code>calendar</code></td></tr>
+        <tr><td>5%</td><td>Doc / démo</td><td>README + <code>preuves/</code> + cette diapo</td></tr>
+      </table>
+    </section>
+
+    <!-- 16 -->
+    <section class="slide">
+      <div class="tag">Submission checklist</div>
+      <h2>Checklist de soumission</h2>
+      <ul>
+        <li class="ok">✓ Tourne dans un environnement propre + deps déclarées</li>
+        <li class="ok">✓ Imports package OK (<code>python -m pymart.cli</code>)</li>
+        <li class="ok">✓ Dossier <code>reports/</code> créé automatiquement</li>
+        <li class="ok">✓ ≥ 1 generator utilisé dans le flux</li>
+        <li class="ok">✓ ≥ 2 exceptions custom définies et levées</li>
+        <li class="ok">✓ ≥ 2 rapports datés écrits sur disque</li>
+        <li class="ok">✓ Preuve incluse (<code>preuves/PROCEDURE_PREUVES.html</code>)</li>
+        <li class="ok">✓ <code>requirements.txt</code> présent</li>
+      </ul>
+    </section>
+
+    <!-- 17 -->
+    <section class="slide center">
+      <div class="tag">Démo</div>
+      <h1>Mini-démo live</h1>
+      <p class="subtitle">4 commandes pour prouver la consigne</p>
+      <div class="cmd" style="text-align:left">rm -f .pymart_store.json
+python -m pymart.cli import --products data/products.txt \
+  --customers data/customers.txt --orders data/orders.txt
+python -m pymart.cli report --type daily --date 2026-06-30 --out reports/
+python -m pymart.cli report --type monthly --month 2026-06 --out reports/
+python -m pymart.cli order create --id 2002 --customer C1001 --sku NOPE --qty 1</div>
+    </section>
+
+    <!-- 18 -->
+    <section class="slide center">
+      <div class="tag">Conclusion</div>
+      <h1>PyMart répond à la consigne</h1>
+      <p class="subtitle">
+        CLI · import robuste · OOP · exceptions · generators<br />
+        rapports datés sur disque · preuves de fonctionnement
+      </p>
+      <p class="muted">Questions ?</p>
+    </section>
+
+  </div>
+
+  <div class="bar">
+    <div id="counter">1 / 18</div>
+    <div class="hint">
+      Naviguer : <span>←</span> <span>→</span> <span>Espace</span> · Plein écran : <span>F</span>
+    </div>
+    <div>tache_final.md → diapo HTML</div>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const counter = document.getElementById("counter");
+    const progress = document.getElementById("progress");
+    let i = 0;
+
+    function show(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+      counter.textContent = (i + 1) + " / " + slides.length;
+      progress.style.width = ((i + 1) / slides.length * 100) + "%";
+      history.replaceState(null, "", "#" + (i + 1));
+    }
+
+    function next() { show(i + 1); }
+    function prev() { show(i - 1); }
+
+    document.addEventListener("keydown", (e) => {
+      if (["ArrowRight", "PageDown", " ", "Enter"].includes(e.key)) {
+        e.preventDefault();
+        next();
+      } else if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) {
+        e.preventDefault();
+        prev();
+      } else if (e.key === "Home") {
+        show(0);
+      } else if (e.key === "End") {
+        show(slides.length - 1);
+      } else if (e.key.toLowerCase() === "f") {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen();
+        }
+      }
+    });
+
+    let touchX = null;
+    document.addEventListener("touchstart", (e) => {
+      touchX = e.changedTouches[0].screenX;
+    });
+    document.addEventListener("touchend", (e) => {
+      if (touchX === null) return;
+      const dx = e.changedTouches[0].screenX - touchX;
+      if (Math.abs(dx) > 40) {
+        if (dx < 0) next();
+        else prev();
+      }
+      touchX = null;
+    });
+
+    const start = parseInt(location.hash.replace("#", ""), 10);
+    show(Number.isFinite(start) && start > 0 ? start - 1 : 0);
+  </script>
+</body>
+</html>
