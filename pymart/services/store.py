@@ -1,19 +1,14 @@
-"""In-memory PyMart store with JSON persistence."""
-
-from __future__ import annotations
+"""In-memory store + save/load as JSON."""
 
 import json
-from collections import defaultdict
 from datetime import date
 from pathlib import Path
-from typing import Any
 
 from pymart.exceptions import (
     DataValidationError,
     DuplicateIdError,
     InsufficientStockError,
     PyMartError,
-    RecordFormatError,
     UnknownProductError,
 )
 from pymart.io.parsers import (
@@ -27,31 +22,44 @@ from pymart.models.order import Order, OrderLine
 
 
 class Store:
-    def __init__(self, state_path: str | Path = ".pymart_store.json") -> None:
+    def __init__(self, state_path=".pymart_store.json"):
         self.state_path = Path(state_path)
-        self.products: dict[str, Product] = {}
-        self.customers: dict[str, Customer] = {}
-        self.orders: dict[str, Order] = {}
-        self.import_errors: list[str] = []
+        self.products = {}
+        self.customers = {}
+        self.orders = {}
+        self.import_errors = []
 
-    def save(self) -> None:
-        payload = {
-            "products": [self._product_to_dict(p) for p in self.products.values()],
-            "customers": [
+    def save(self):
+        products_data = []
+        for product in self.products.values():
+            products_data.append(self._product_to_dict(product))
+
+        customers_data = []
+        for customer in self.customers.values():
+            customers_data.append(
                 {
-                    "customer_id": c.customer_id,
-                    "name": c.name,
-                    "email": c.email,
-                    "loyalty_points": c.loyalty_points,
+                    "customer_id": customer.customer_id,
+                    "name": customer.name,
+                    "email": customer.email,
+                    "loyalty_points": customer.loyalty_points,
                 }
-                for c in self.customers.values()
-            ],
-            "orders": [o.to_dict() for o in self.orders.values()],
+            )
+
+        orders_data = []
+        for order in self.orders.values():
+            orders_data.append(order.to_dict())
+
+        payload = {
+            "products": products_data,
+            "customers": customers_data,
+            "orders": orders_data,
             "import_errors": self.import_errors,
         }
-        self.state_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        self.state_path.write_text(
+            json.dumps(payload, indent=2), encoding="utf-8"
+        )
 
-    def load(self) -> None:
+    def load(self):
         if not self.state_path.exists():
             return
         try:
@@ -67,6 +75,7 @@ class Store:
         for raw in payload.get("products", []):
             product = self._product_from_dict(raw)
             self.products[str(product.sku)] = product
+
         for raw in payload.get("customers", []):
             customer = Customer(
                 customer_id=raw["customer_id"],
@@ -75,13 +84,14 @@ class Store:
                 loyalty_points=int(raw.get("loyalty_points", 0)),
             )
             self.customers[customer.customer_id] = customer
+
         for raw in payload.get("orders", []):
             order = Order.from_dict(raw)
             self.orders[order.order_id] = order
 
     @staticmethod
-    def _product_to_dict(product: Product) -> dict[str, Any]:
-        data: dict[str, Any] = {
+    def _product_to_dict(product):
+        data = {
             "sku": product.sku,
             "name": product.name,
             "price": product.price,
@@ -99,13 +109,14 @@ class Store:
         return data
 
     @staticmethod
-    def _product_from_dict(raw: dict[str, Any]) -> Product:
+    def _product_from_dict(raw):
         kind = raw.get("kind", "standard")
         sku = raw["sku"]
         name = raw["name"]
         price = float(raw["price"])
         quantity = int(raw["quantity"])
         extra = raw.get("extra", "")
+
         if kind == "perishable":
             return PerishableProduct(
                 sku=sku,
@@ -116,7 +127,10 @@ class Store:
                 storage_temp_c=raw.get("storage_temp_c"),
             )
         if kind == "electronic":
-            months = int(extra) if str(extra).isdigit() else 12
+            if str(extra).isdigit():
+                months = int(extra)
+            else:
+                months = 12
             return ElectronicProduct(
                 sku=sku,
                 name=name,
@@ -127,7 +141,7 @@ class Store:
             )
         return Product(sku=sku, name=name, price=price, quantity=quantity)
 
-    def _build_product(self, raw: dict[str, Any]) -> Product:
+    def _build_product(self, raw):
         kind = raw["kind"]
         if kind == "perishable":
             return PerishableProduct(
@@ -138,7 +152,10 @@ class Store:
                 expiry_date=raw["extra"] or "2099-12-31",
             )
         if kind == "electronic":
-            months = int(raw["extra"]) if str(raw["extra"]).isdigit() else 12
+            if str(raw["extra"]).isdigit():
+                months = int(raw["extra"])
+            else:
+                months = 12
             return ElectronicProduct(
                 sku=raw["sku"],
                 name=raw["name"],
@@ -153,10 +170,11 @@ class Store:
             quantity=raw["quantity"],
         )
 
-    def import_products(self, path: str | Path) -> tuple[int, int]:
+    def import_products(self, path):
         imported = 0
         rejected = 0
         source = str(path)
+
         for line_no, fields in iter_text_rows(path):
             try:
                 raw = parse_product_row(fields, source=source, line=line_no)
@@ -164,17 +182,19 @@ class Store:
                     raise DuplicateIdError("product", raw["sku"])
                 product = self._build_product(raw)
             except PyMartError as exc:
-                rejected += 1
+                rejected = rejected + 1
                 self.import_errors.append(str(exc))
             else:
                 self.products[str(product.sku)] = product
-                imported += 1
+                imported = imported + 1
+
         return imported, rejected
 
-    def import_customers(self, path: str | Path) -> tuple[int, int]:
+    def import_customers(self, path):
         imported = 0
         rejected = 0
         source = str(path)
+
         for line_no, fields in iter_text_rows(path):
             try:
                 raw = parse_customer_row(fields, source=source, line=line_no)
@@ -187,19 +207,20 @@ class Store:
                     loyalty_points=raw["loyalty_points"],
                 )
             except PyMartError as exc:
-                rejected += 1
+                rejected = rejected + 1
                 self.import_errors.append(str(exc))
             else:
                 self.customers[customer.customer_id] = customer
-                imported += 1
+                imported = imported + 1
+
         return imported, rejected
 
-    def import_orders(self, path: str | Path) -> tuple[int, int]:
-        """Import order lines; groups by order_id into Order objects."""
+    def import_orders(self, path):
+        """Import order lines and group them by order_id."""
         imported_lines = 0
         rejected = 0
         source = str(path)
-        grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        grouped = {}
 
         for line_no, fields in iter_text_rows(path):
             try:
@@ -219,18 +240,15 @@ class Store:
                     raise InsufficientStockError(
                         raw["sku"], raw["quantity"], product.quantity
                     )
-            except (
-                RecordFormatError,
-                DataValidationError,
-                UnknownProductError,
-                InsufficientStockError,
-                DuplicateIdError,
-            ) as exc:
-                rejected += 1
+            except PyMartError as exc:
+                rejected = rejected + 1
                 self.import_errors.append(str(exc))
             else:
-                grouped[raw["order_id"]].append(raw)
-                imported_lines += 1
+                order_id = raw["order_id"]
+                if order_id not in grouped:
+                    grouped[order_id] = []
+                grouped[order_id].append(raw)
+                imported_lines = imported_lines + 1
 
         for order_id, rows in grouped.items():
             if order_id in self.orders:
@@ -238,6 +256,7 @@ class Store:
                     str(DuplicateIdError("order", order_id))
                 )
                 continue
+
             first = rows[0]
             order = Order(
                 order_id=order_id,
@@ -261,12 +280,12 @@ class Store:
 
     def create_order(
         self,
-        order_id: str,
-        customer_id: str,
-        sku: str,
-        quantity: int,
-        order_date: date | None = None,
-    ) -> Order:
+        order_id,
+        customer_id,
+        sku,
+        quantity,
+        order_date=None,
+    ):
         if order_id in self.orders:
             raise DuplicateIdError("order", order_id)
         if customer_id not in self.customers:
@@ -288,17 +307,23 @@ class Store:
         self.orders[order_id] = order
         return order
 
-    def list_orders(self) -> list[Order]:
-        return sorted(self.orders.values(), key=lambda o: (o.order_date, o.order_id))
+    def list_orders(self):
+        orders = list(self.orders.values())
 
-    def iter_orders_for_date(self, day: date):
-        """Generator: yield orders matching a calendar day."""
+        def sort_key(order):
+            return (order.order_date, order.order_id)
+
+        orders.sort(key=sort_key)
+        return orders
+
+    def iter_orders_for_date(self, day):
+        """Generator: yield orders for one calendar day."""
         for order in self.list_orders():
             if order.order_date == day:
                 yield order
 
-    def iter_orders_for_month(self, year: int, month: int):
-        """Generator: yield orders in a calendar month."""
+    def iter_orders_for_month(self, year, month):
+        """Generator: yield orders for one calendar month."""
         for order in self.list_orders():
             if order.order_date.year == year and order.order_date.month == month:
                 yield order

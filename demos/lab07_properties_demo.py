@@ -1,11 +1,11 @@
-"""Demonstrate validated properties, class/static methods, and encapsulation (lab 7)."""
+"""Demonstrate validated properties, class/static methods (lab 7)."""
 
 import _bootstrap  # noqa: F401
 
 from pymart.models import Customer, Product
 
 
-def main() -> None:
+def main():
     p1 = Product(sku="NB-001", name="Notebook", price=3.50, quantity=120)
     p2 = Product(sku="BK-550", name="Backpack", price=29.99, quantity=8)
 
@@ -18,12 +18,8 @@ def main() -> None:
     p2.apply_discount(10)
     print("After discount:", p2)
 
-    print("SKU via method:", p1.get_sku())
-    print("Mangled internal access:", p1._Product__sku)
-    try:
-        print(p1.__sku)
-    except AttributeError as exc:
-        print("Direct __sku access blocked:", type(exc).__name__)
+    print("SKU via property:", p1.sku)
+    print("Internal attribute:", p1._sku)
 
     try:
         p1.price = -1
@@ -47,10 +43,7 @@ def main() -> None:
     except ValueError as exc:
         print("Invalid email blocked:", exc)
 
-    try:
-        print(c1.__email)
-    except AttributeError as exc:
-        print("Direct __email access blocked:", type(exc).__name__)
+    print("Email via property:", c1.email)
 
 
 if __name__ == "__main__":
