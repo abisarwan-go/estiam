@@ -120,6 +120,38 @@
       white-space: pre-wrap;
     }
     .cmd + .cmd { margin-top: 0.6rem; }
+    .pair {
+      width: min(100%, 960px);
+      margin: 0.55rem 0;
+      text-align: left;
+    }
+    .pair .label {
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 0.25rem;
+    }
+    .pair .out {
+      background: #07140f;
+      border: 1px solid #1f5a3d;
+      border-radius: 12px;
+      padding: 0.7rem 0.95rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: #86efac;
+      white-space: pre-wrap;
+      margin-top: 0.35rem;
+    }
+    .pair .out.err {
+      background: #1a0c0c;
+      border-color: #7f1d1d;
+      color: #fca5a5;
+    }
+    .slide.dense { justify-content: flex-start; padding-top: 2.4rem; }
+    .slide.dense h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
+    .slide.dense .subtitle { margin-bottom: 0.7rem; }
     table {
       border-collapse: collapse;
       width: min(100%, 920px);
@@ -495,16 +527,81 @@ reports/monthly/2026-06/stock_levels_2026-06.txt</div>
     <section class="slide center">
       <div class="tag">Démo</div>
       <h1>Mini-démo live</h1>
-      <p class="subtitle">4 commandes pour prouver la consigne</p>
-      <div class="cmd" style="text-align:left">rm -f .pymart_store.json
-python -m pymart.cli import --products data/products.txt \
-  --customers data/customers.txt --orders data/orders.txt
-python -m pymart.cli report --type daily --date 2026-06-30 --out reports/
-python -m pymart.cli report --type monthly --month 2026-06 --out reports/
-python -m pymart.cli order create --id 2002 --customer C1001 --sku NOPE --qty 1</div>
+      <p class="subtitle">Reset → import → rapports → order OK → order erreur</p>
+      <div class="grid two" style="margin-top:0.5rem">
+        <div class="card"><h3>1. Reset + import</h3><p>Charger data/ + messages de validation</p></div>
+        <div class="card"><h3>2. Rapports</h3><p>Daily + monthly (+ stock) sur disque</p></div>
+        <div class="card"><h3>3. Order OK</h3><p>SKU réel <code>NB-001</code></p></div>
+        <div class="card"><h3>4. Order erreur</h3><p>SKU invalide <code>NOPE</code> (sans crash)</p></div>
+      </div>
     </section>
 
     <!-- 18 -->
+    <section class="slide dense">
+      <div class="tag">Démo · 1/4</div>
+      <h2>Reset + import</h2>
+      <div class="pair">
+        <div class="label">Commande</div>
+        <div class="cmd">rm -f .pymart_store.json
+python -m pymart.cli import \
+  --products data/products.txt \
+  --customers data/customers.txt \
+  --orders data/orders.txt</div>
+        <div class="label">Réponse attendue</div>
+        <div class="out">Products imported=5 rejected=2
+Customers imported=3 rejected=2
+Order lines imported=5 rejected=3
+Recent validation messages:
+  - [file=data/products.txt, line=7] invalid price/quantity: 'abc', '10'
+  - [file=data/products.txt, line=8] price and quantity must be non-negative
+  - [file=data/customers.txt, line=5] customer_id, name, and email(@) are required
+  - …</div>
+      </div>
+    </section>
+
+    <!-- 19 -->
+    <section class="slide dense">
+      <div class="tag">Démo · 2/4</div>
+      <h2>Rapports daily + monthly</h2>
+      <div class="pair">
+        <div class="label">Commande</div>
+        <div class="cmd">python -m pymart.cli report --type daily --date 2026-06-30 --out reports/
+python -m pymart.cli report --type monthly --month 2026-06 --out reports/</div>
+        <div class="label">Réponse attendue</div>
+        <div class="out">Wrote daily report: reports/daily/2026-06-30/daily_sales_2026-06-30.txt
+Wrote monthly report: reports/monthly/2026-06/monthly_summary_2026-06.txt
+Wrote stock report: reports/monthly/2026-06/stock_levels_2026-06.txt</div>
+      </div>
+    </section>
+
+    <!-- 20 -->
+    <section class="slide dense">
+      <div class="tag">Démo · 3/4</div>
+      <h2>Order create — succès</h2>
+      <div class="pair">
+        <div class="label">Commande (SKU réel)</div>
+        <div class="cmd">python -m pymart.cli order create \
+  --id 2002 --customer C1001 --sku NB-001 --qty 1</div>
+        <div class="label">Réponse attendue</div>
+        <div class="out">Created: Order 2002 | customer=C1001 | date=… | lines=1 | total=$3.49 | status=created</div>
+      </div>
+    </section>
+
+    <!-- 21 -->
+    <section class="slide dense">
+      <div class="tag">Démo · 4/4</div>
+      <h2>Order create — erreur gérée</h2>
+      <div class="pair">
+        <div class="label">Commande (SKU invalide)</div>
+        <div class="cmd">python -m pymart.cli order create \
+  --id 2003 --customer C1001 --sku NOPE --qty 1</div>
+        <div class="label">Réponse attendue</div>
+        <div class="out err">Order error: Unknown product SKU 'NOPE'.</div>
+      </div>
+      <p class="subtitle" style="margin-top:1rem">Message clair · pas de traceback · le programme continue.</p>
+    </section>
+
+    <!-- 22 -->
     <section class="slide center">
       <div class="tag">Conclusion</div>
       <h1>PyMart répond à la consigne</h1>
@@ -518,7 +615,7 @@ python -m pymart.cli order create --id 2002 --customer C1001 --sku NOPE --qty 1<
   </div>
 
   <div class="bar">
-    <div id="counter">1 / 18</div>
+    <div id="counter">1 / 22</div>
     <div class="hint">
       Naviguer : <span>←</span> <span>→</span> <span>Espace</span> · Plein écran : <span>F</span>
     </div>
